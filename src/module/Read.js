@@ -16,11 +16,11 @@ import * as Post from './Post';
  */
 export const addFloorGotoLink = function () {
     let sf = Util.getThreadSfParam();
-    $('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').each(function () {
+    $('.readtext').find('> table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child').each(function () {
         let $this = $(this);
         let floorText = $this.text();
         if (!/^\d+楼/.test(floorText)) return;
-        let linkName = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        let linkName = $this.closest('.readtext').prev('.readlou').prev('a').attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
         $this.html($this.html().replace(/(\d+)楼/, `<a class="pd_goto_link" href="${url}" title="复制楼层链接">$1楼</a>`));
@@ -66,9 +66,9 @@ export const addFastGotoFloorInput = function () {
 export const fastGotoFloor = function () {
     let floor = parseInt(Util.getUrlParam('floor'));
     if (!floor || floor < 0) return;
-    let $floorNode = $(`.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
+    let $floorNode = $(`.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
     if (!$floorNode.length) return;
-    let linkName = $floorNode.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+    let linkName = $floorNode.closest('.readtext').prev('.readlou').prev('a').attr('name');
     if (!linkName || !/^\d+$/.test(linkName)) return;
     location.hash = '#' + linkName;
 };
@@ -79,12 +79,9 @@ export const fastGotoFloor = function () {
  * @param {string} color 神秘颜色
  */
 export const modifyFloorSmColor = function ($elem, color) {
-    $elem.css('color', color).prev('.readidmsbottom_j').css('background', color)
-        .prev('.readidmsbottom_s').css({
-        'color': color,
-        'border-color': color,
-    });
-    $elem.closest('.readidms').css('box-shadow', `1px 1px 2px 2px ${color}`);
+    $elem.css('color', color).parent('.readidmsbottom').next('.readidmsbottom').find('> span:nth-child(2)').css('color', color)
+        .parent('.readidmsbottom').next('.readidmsbottom').find('> span:nth-child(2)').css('color', color);
+    $elem.closest('.readtext').css('box-shadow', `1px 1px 2px 2px ${color}`).find('> table > tbody > tr > td:nth-child(2) > div').css('box-shadow', `1px 1px 2px 2px ${color}`);
 };
 
 /**
@@ -104,9 +101,9 @@ export const adjustThreadContentFontSize = function () {
     if (Config.threadContentFontSize > 0 && Config.threadContentFontSize !== 12) {
         $('head').append(`
 <style>
-  .readtext > table > tbody > tr > td { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; width: 100%; }
-  .readtext > table > tbody > tr > td > div > div:first-child,
-  .readtext > table > tbody > tr > td > div > div:nth-child(2),
+  .readtext > table > tbody > tr > td:nth-child(2) { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; width: 100%; }
+  .readtext > table > tbody > tr > td:nth-child(2) > div > div:first-child,
+  .readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2),
   .readtext .read_fds {
     font-size: 14px;
     line-height: 22px;
@@ -231,7 +228,7 @@ export const statFloor = function (tid, startPage, endPage, startFloor, endFloor
                 $('.readtext', html.replace(/src="[^"]+"/g, '')).each(function () {
                     let data = {};
                     let $floor = $(this);
-                    let $floorHeader = $floor.prev('div').prev('.readlou');
+                    let $floorHeader = $floor.prev('.readlou');
                     let floor = parseInt($floorHeader.find('> div:nth-child(2) > span:first-child').text());
                     if (!floor) return;
                     if (floor < startFloor) return;
@@ -363,7 +360,7 @@ export const showStatFloorDialog = function (floorList) {
         }
         if (isRemoveTopFloor) {
             let $topFloor = $('.readtext:first');
-            if ($topFloor.prev('div').prev('.readlou').prev('a').attr('name') === 'tpc') {
+            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
                 let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show&uid="]').text();
                 list = list.map(data => data && data.userName !== topFloorUserName ? data : null);
             }
@@ -593,8 +590,8 @@ export const getMultiQuoteData = function () {
         let $floor = $(this).closest('.readtext');
         let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
-        let pid = $floor.prev('div').prev('.readlou').prev('a').attr('name');
-        let userName = Util.getFloorUserName($floor.prev('div').find('.readidmsbottom > a').text());
+        let pid = $floor.prev('.readlou').prev('a').attr('name');
+        let userName = Util.getFloorUserName($floor.find('.readidmsbottom > a[href^="profile.php?action=show&uid="]').text());
         if (!userName) return;
         quoteList.push({floor: floor, pid: pid, userName: userName});
     });
@@ -608,7 +605,7 @@ export const addMultiQuoteButton = function () {
     let replyUrl = $('a[href^="post.php?action=reply"].b_tit2').attr('href');
     if (!replyUrl) return;
     $('<label title="多重引用" class="pd_multi_quote_chk"><input type="checkbox"> 引</label>')
-        .appendTo('.readtext > table > tbody > tr > td > div > div:nth-child(2)')
+        .appendTo('.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2)')
         .find('input')
         .click(function () {
             let tid = parseInt(Util.getUrlParam('tid'));
@@ -671,10 +668,7 @@ export const addUserMemo = function () {
         if (!key) return;
 
         let memo = Config.userMemoList[key];
-        let memoText = memo;
-        let maxLength = 24;
-        if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
-        $this.parent().append(`<div class="pd_user_memo" title="备注：${memo}">(${memoText})</div>`);
+        $this.after(`<span class="pd_custom_tips pd_user_memo" title="备注：${memo}">[?]</span>`);
     });
 };
 
@@ -782,7 +776,7 @@ export const addMoreSmileLink = function () {
  * 在帖子页面解析多媒体标签
  */
 export const parseMediaTag = function () {
-    $('.readtext > table > tbody > tr > td').each(function () {
+    $('.readtext > table > tbody > tr > td:nth-child(2)').each(function () {
         let $this = $(this);
         let html = $this.html();
         if (/\[(audio|video)\](http|ftp)[^<>]+\[\/(audio|video)\]/.test(html)) {
@@ -805,11 +799,11 @@ export const parseMediaTag = function () {
  */
 export const showAttachImageOutsideSellBox = function () {
     if (Util.getCurrentThreadPage() !== 1) return;
-    let $area = $('.readtext:first > table > tbody > tr > td');
+    let $area = $('.readtext:first > table > tbody > tr > td:nth-child(2)');
     if (!$area.find('select[name="buyers"]').length) return;
     let html = $area.html();
     if (/\[attachment=\d+\]/.test(html)) {
-        let pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('.readlou').prev('a').attr('name');
+        let pid = $area.closest('.readtext').prev('.readlou').prev('.readlou').prev('a').attr('name');
         let tid = Util.getUrlParam('tid');
         $area.html(
             html.replace(
@@ -964,21 +958,10 @@ export const showBuyThreadLogDialog = function () {
 };
 
 /**
- * 屏蔽帖子页面无用的按钮
- */
-export const blockUselessThreadButtons = function () {
-    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
-        let $this = $(this);
-        if ($this.text().trim() === Info.userName) return;
-        $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();
-    });
-};
-
-/**
  * 鼠标移到到签名可显示提示
  */
 export const addSignTips = function () {
-    $('.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:nth-child(3)').each(function () {
+    $('.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:nth-child(3)').each(function () {
         let $this = $(this);
         $this.attr('title', $this.text()).addClass('pd_custom_tips');
     });

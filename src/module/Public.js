@@ -124,7 +124,7 @@ export const appendCss = function () {
   .readtext .pd_goto_link:hover { color: #51d; }
   .pd_multi_quote_chk { margin-right: 2px; float: right; }
   .pd_fast_goto_floor { margin-right: 10px !important; line-height: 32px; }
-  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 10px; }
+  .pd_user_memo { font-size: 12px; color: #999; margin-left: 5px; }
   .readtext img[onclick] { width: auto; max-width: 850px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_code_area { max-height: 550px; margin-top: 1em; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
@@ -216,12 +216,12 @@ export const appendCss = function () {
     if (location.pathname === '/read.php' && (Config.threadContentFontSize > 0 || Config.adjustThreadContentWidthEnabled)) {
         $('head').append(`
 <style>
-  .readtext > table > tbody > tr > td {
+  .readtext > table > tbody > tr > td:nth-child(2) {
     width: ${Config.adjustThreadContentWidthEnabled ? 643.2 : 823.2}px;
     display: inline-block;
     overflow-wrap: break-word;
   }
-  .readtext > table > tbody > tr > td table { word-break: break-all; }
+  .readtext > table > tbody > tr > td:nth-child(2) table { word-break: break-all; }
 </style>
 `);
     }
@@ -667,9 +667,9 @@ export const followUsers = function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.followUserList) > -1) {
                 if (Config.highlightFollowUserFloorEnabled) {
-                    $this.closest('.readidms').parent().next('.readtext').addClass('pd_follow_highlight');
+                    $this.closest('.readtext').addClass('pd_follow_highlight').find('> table > tbody > tr > td:nth-child(2) > div').addClass('pd_follow_highlight');
                 } else {
-                    $this.closest('.readidms').parent().next('.readtext').find('.pd_goto_link').addClass('pd_highlight');
+                    $this.closest('.readtext').find('.pd_goto_link').addClass('pd_highlight');
                 }
             }
         });
@@ -737,8 +737,7 @@ export const blockUsers = function () {
                 if (i === 0 && page === 1 && type > 1) return;
                 else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
-                let $floor = $this.closest('.readidms').parent();
-                $floor.next('.readtext').remove();
+                let $floor = $this.closest('.readtext');
                 $floor.prev('.readlou').remove();
                 $floor.remove();
             }
@@ -847,15 +846,14 @@ export const blockThread = function () {
         let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"]').eq(0);
-        if (!$userName.closest('.readidms').parent().next('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').text().includes('楼主')) return;
+        if (!$userName.closest('.readtext').find('> table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child').text().includes('楼主')) return;
         let userName = Util.getFloorUserName($userName.text());
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
         if (!fid) return;
         if (isBlock(title, userName, fid)) {
             num++;
-            let $floor = $userName.closest('.readidms').parent();
-            $floor.next('.readtext').remove();
+            let $floor = $userName.closest('.readtext');
             $floor.prev('.readlou').remove();
             $floor.remove();
         }

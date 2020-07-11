@@ -11,7 +11,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.0.1
+// @version     14.1.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -100,7 +100,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-var version = '14.0.1';
+var version = '14.1.0';
 
 /**
  * 导出模块
@@ -9749,10 +9749,10 @@ var checkBrowserType = exports.checkBrowserType = function checkBrowserType() {
  * 添加CSS样式
  */
 var appendCss = exports.appendCss = function appendCss() {
-    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  .pd_not_click_link, .pd_not_click_link:visited { color: #000; pointer-events: none; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0; border-top: 1px solid rgba(0, 0, 0, .2);\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center;\n    border: 1px solid #ccc; border-left: none; border-right: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1004;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  .drow { z-index: 1001 !important; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1003; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readtext .pd_goto_link { color: #000; }\n  .readtext .pd_goto_link:hover { color: #51d; }\n  .pd_multi_quote_chk { margin-right: 2px; float: right; }\n  .pd_fast_goto_floor { margin-right: 10px !important; line-height: 32px; }\n  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 10px; }\n  .readtext img[onclick] { width: auto; max-width: 850px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; margin-top: 1em; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  .pd_code_area .pd_copy_code { position: absolute; margin-top: -1em; min-width: 5em; text-align: center; background-color: #fffbf4; height: 20px; }\n  .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }\n  .pd_follow_highlight { box-shadow: 0 0 3px 1px #ff9933 !important; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .7);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .7); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  .pd_useless_sub_property { color: #999; text-decoration: line-through; }\n  .pd_arm_id { font-style: normal; color: #999; }\n  .pd_new_arm_mark { font-style: normal; color: #f00; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .indexlbtit2 .pd_thread_goto, .rightlbtit .pd_thread_goto {\n    position: absolute; top: 0; right: 0; margin: 0; padding: 0; width: 65px; border: none;\n  }\n  .indexlbtit2 .pd_thread_goto:hover, .rightlbtit .pd_thread_goto:hover { border: none; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  #pdPropertiesArea td { position: relative; }\n  #pdPropertiesArea input[type="text"] { width: 211px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 5px; }\n  .pd_property_diff em { font-style: normal; }\n  .rightbox1 { overflow: hidden; }\n  .pd_rightbox1_gray, .pd_rightbox1_gray:visited, .pd_rightbox1_gray:hover { color: #b0b0ff; border-color: #b0b0ff; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns input, .pd_cfg_btns button { vertical-align: middle; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
+    $('head').append('\n<style>\n  /* \u516C\u5171 */\n  .pd_highlight { color: #f00 !important; }\n  .pd_notice, .pd_msg .pd_notice { font-style: italic; color: #666; }\n  .pd_input, .pd_cfg_main input, .pd_cfg_main select {\n    vertical-align: middle; height: auto; margin-right: 0; line-height: 22px; font-size: 12px;\n  }\n  .pd_input[type="text"], .pd_input[type="number"], .pd_cfg_main input[type="text"], .pd_cfg_main input[type="number"] {\n    height: 22px; line-height: 22px;\n  }\n  .pd_input:focus, .pd_cfg_main input[type="text"]:focus, .pd_cfg_main input[type="number"]:focus, .pd_cfg_main textarea:focus,\n      .pd_textarea:focus { border-color: #7eb4ea; }\n  .pd_textarea, .pd_cfg_main textarea { border: 1px solid #ccc; font-size: 12px; }\n  .pd_btn_link { margin-left: 4px; margin-right: 4px; }\n  .pd_custom_tips { cursor: help; }\n  .pd_disabled_link { color: #999 !important; text-decoration: none !important; cursor: default; }\n  .pd_not_click_link, .pd_not_click_link:visited { color: #000; pointer-events: none; }\n  hr {\n    box-sizing: content-box; height: 0; margin-top: 7px; margin-bottom: 7px; border: 0; border-top: 1px solid rgba(0, 0, 0, .2);\n  }\n  .pd_overflow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n  .pd_hide { width: 0 !important; height: 0 !important; font: 0/0 a; color: transparent; background-color: transparent; border: 0 !important; }\n  .pd_stat i { display: inline-block; font-style: normal; margin-right: 3px; }\n  .pd_stat_extra em, .pd_stat_extra ins { padding: 0 2px; cursor: help; }\n  .pd_panel { position: absolute; overflow-y: auto; background-color: #fff; border: 1px solid #9191ff; opacity: 0.9; }\n  .pd_title_tips {\n    position: absolute; max-width: 470px; font-size: 12px; line-height: 1.5em;\n    padding: 2px 5px; background-color: #fcfcfc; border: 1px solid #767676; z-index: 9999;\n  }\n  .pd_search_type {\n    float: left; height: 26px; line-height: 26px; width: 65px; text-align: center;\n    border: 1px solid #ccc; border-left: none; border-right: none; cursor: pointer;\n  }\n  .pd_search_type i { font-style: normal; margin-left: 5px; font-family: sans-serif; }\n  .pd_search_type_list {\n    position: absolute; width: 63px; background-color: #fcfcfc; border: 1px solid #ccc; border-top: none; line-height: 26px;\n    text-indent: 13px; cursor: pointer; z-index: 1004;\n  }\n  .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }\n  .drow { z-index: 1001 !important; }\n  \n  /* \u6D88\u606F\u6846 */\n  .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }\n  .pd_msg_container { position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; width: 100%; z-index: 1003; }\n  .pd_msg {\n    border: 1px solid #6ca7c0; text-shadow: 0 0 3px rgba(0, 0, 0, 0.1); border-radius: 3px; padding: 10px 40px; text-align: center;\n    font-size: 14px; position: absolute; display: none; color: #333; line-height: 1.6em; background: #f8fcfe; background-repeat: no-repeat;\n    background-image: -webkit-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -moz-linear-gradient(top, #f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: -ms-linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n    background-image: linear-gradient(#f9fcfe, #f6fbfe 25%, #eff7fc);\n  }\n  .pd_msg strong { margin-right: 5px; }\n  .pd_msg i { font-style: normal; padding-left: 10px; }\n  .pd_msg em, .pd_stat em, .pd_msg ins, .pd_stat ins { font-weight: 700; font-style: normal; color:#ff6600; padding: 0 3px; }\n  .pd_msg ins, .pd_stat ins { text-decoration: none; color: #339933; }\n  .pd_msg a { font-weight: bold; margin-left: 15px; }\n  \n  /* \u5E16\u5B50\u9875\u9762 */\n  .readtext .pd_goto_link { color: #000; }\n  .readtext .pd_goto_link:hover { color: #51d; }\n  .pd_multi_quote_chk { margin-right: 2px; float: right; }\n  .pd_fast_goto_floor { margin-right: 10px !important; line-height: 32px; }\n  .pd_user_memo { font-size: 12px; color: #999; margin-left: 5px; }\n  .readtext img[onclick] { width: auto; max-width: 850px; }\n  .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }\n  .pd_code_area { max-height: 550px; margin-top: 1em; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }\n  .pd_code_area .pd_copy_code { position: absolute; margin-top: -1em; min-width: 5em; text-align: center; background-color: #fffbf4; height: 20px; }\n  .pd_good_post_mark { outline: 3px solid #f00; outline-offset: -3px; }\n  .pd_follow_highlight { box-shadow: 0 0 3px 1px #ff9933 !important; }\n  \n  /* \u6211\u7684\u7269\u54C1\u9875\u9762 */\n  .pd_item_btns { text-align: right; margin-top: 5px;  }\n  .pd_item_btns button, .pd_item_btns input { margin-bottom: 2px; vertical-align: middle; }\n  .pd_result { border: 1px solid #99f; padding: 5px; margin-top: 10px; line-height: 2em; }\n  .pd_arm_equipped { background-color:#eef; -webkit-box-shadow: 0 0 7px #99f; box-shadow: 0 0 7px #99f; }\n  .pd_arm_equipped > td:nth-child(3)::before { content: "\uFF08\u88C5\u5907\u4E2D\uFF09"; font-weight: bold; }\n  .pd_arm_equipped a[data-name="equip"], .pd_arm_equipped a[data-name="smelt"] { color: #777; pointer-events: none; }\n  .kf_fw_ig4 > tbody > tr > td { position: relative; }\n  .kf_fw_ig4 > tbody > tr > td[data-memo]::after {\n    content: "(" attr(data-memo) ")"; position: absolute; bottom: 0; right: 5px; padding: 0 5px; color: #777; background: rgba(252, 252, 252, .7);\n  }\n  .kf_fw_ig4 > tbody > .pd_arm_equipped > td[data-memo]::after { background: rgba(238, 238, 255, .7); }\n  .kf_fw_ig4 > tbody > tr > td > input[name="armCheck"] { position: absolute; top: 0; left: 5px; }\n  .show_arm_info { position: absolute; top: 0; right: 0; padding: 0 10px; background: rgba(252, 252, 252, .9); }\n  .pd_arm_equipped .show_arm_info { background: rgba(238, 238, 255, .9); }\n  .pd_useless_sub_property { color: #999; text-decoration: line-through; }\n  .pd_arm_id { font-style: normal; color: #999; }\n  .pd_new_arm_mark { font-style: normal; color: #f00; }\n  \n  /* \u53D1\u5E16\u9875\u9762 */\n  #pdSmilePanel img { margin: 3px; cursor: pointer; }\n  .editor-button .pd_editor_btn { background: none; text-indent: 0; line-height: 18px; cursor: default; }\n  .pd_post_extra_option { text-align: left; margin: 5px; }\n  .pd_post_extra_option input { vertical-align: middle; height: auto; margin-right: 0; }\n  \n  /* \u5176\u5B83\u9875\u9762 */\n  .pd_thread_page { margin-left: 5px; }\n  .pd_thread_page a { color: #444; padding: 0 3px; }\n  .pd_thread_page a:hover { color: #51d; }\n  .pd_card_chk { position: absolute; bottom: -8px; left: 1px; }\n  .indexlbtit2 .pd_thread_goto, .rightlbtit .pd_thread_goto {\n    position: absolute; top: 0; right: 0; margin: 0; padding: 0; width: 65px; border: none;\n  }\n  .indexlbtit2 .pd_thread_goto:hover, .rightlbtit .pd_thread_goto:hover { border: none; }\n  .pd_id_color_select > td { position: relative; cursor: pointer; }\n  .pd_id_color_select > td > input { position: absolute; top: 18px; left: 10px; }\n  #pdPropertiesArea td { position: relative; }\n  #pdPropertiesArea input[type="text"] { width: 211px; }\n  .pd_property_diff { position: absolute; top: 0px; right: 5px; }\n  .pd_property_diff em { font-style: normal; }\n  .rightbox1 { overflow: hidden; }\n  .pd_rightbox1_gray, .pd_rightbox1_gray:visited, .pd_rightbox1_gray:hover { color: #b0b0ff; border-color: #b0b0ff; }\n\n  /* \u8BBE\u7F6E\u5BF9\u8BDD\u6846 */\n  .pd_cfg_ml { margin-left: 10px; }\n  .pd_cfg_box {\n    position: ' + (_Info2.default.isMobile ? 'absolute' : 'fixed') + '; border: 1px solid #9191ff; display: none; z-index: 1002;\n    -webkit-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.5);\n  }\n  .pd_cfg_box h1 {\n    text-align: center; font-size: 14px; background-color: #9191ff; color: #fff; line-height: 2em; margin: 0; padding-left: 20px;\n  }\n  .pd_cfg_box h1 span { float: right; cursor: pointer; padding: 0 10px; }\n  .pd_cfg_nav { text-align: right; margin-top: 5px; margin-bottom: -5px; }\n  .pd_cfg_main { background-color: #fcfcfc; padding: 0 10px; font-size: 12px; line-height: 24px; min-height: 50px; overflow: auto; }\n  .pd_cfg_main fieldset { border: 1px solid #ccccff; padding: 0 6px 6px; }\n  .pd_cfg_main legend { font-weight: bold; }\n  .pd_cfg_main input[type="color"] { height: 18px; width: 30px; padding: 0; }\n  .pd_cfg_tips { color: #51d; text-decoration: none; cursor: help; }\n  .pd_cfg_tips:hover { color: #ff0000; }\n  #pdConfigDialog .pd_cfg_main { overflow-x: hidden; white-space: nowrap; }\n  .pd_cfg_panel { display: inline-block; width: 400px; vertical-align: top; }\n  .pd_cfg_panel + .pd_cfg_panel { margin-left: 5px; }\n  .pd_cfg_btns { background-color: #fcfcfc; text-align: right; padding: 5px; }\n  .pd_cfg_btns input, .pd_cfg_btns button { vertical-align: middle; }\n  .pd_cfg_btns button { min-width: 80px; }\n  .pd_cfg_about { float: left; line-height: 24px; margin-left: 5px; }\n  .pd_custom_script_header { margin: 7px 0; padding: 5px; background-color: #e8e8e8; border-radius: 5px; }\n  .pd_custom_script_content { display: none; width: 750px; height: 350px; white-space: pre; }\n\n  /* \u65E5\u5FD7\u5BF9\u8BDD\u6846 */\n  .pd_log_nav { text-align: center; margin: -5px 0 -12px; font-size: 14px; line-height: 44px; }\n  .pd_log_nav a { display: inline-block; }\n  .pd_log_nav h2 { display: inline; font-size: 14px; margin-left: 7px; margin-right: 7px; }\n  .pd_log_content { height: 242px; overflow: auto; }\n  .pd_log_content h3 { display: inline-block; font-size: 12px; line-height: 22px; margin: 0; }\n  .pd_log_content h3:not(:first-child) { margin-top: 5px; }\n  .pd_log_content p { line-height: 22px; margin: 0; }\n</style>\n');
 
     if (location.pathname === '/read.php' && (Config.threadContentFontSize > 0 || Config.adjustThreadContentWidthEnabled)) {
-        $('head').append('\n<style>\n  .readtext > table > tbody > tr > td {\n    width: ' + (Config.adjustThreadContentWidthEnabled ? 643.2 : 823.2) + 'px;\n    display: inline-block;\n    overflow-wrap: break-word;\n  }\n  .readtext > table > tbody > tr > td table { word-break: break-all; }\n</style>\n');
+        $('head').append('\n<style>\n  .readtext > table > tbody > tr > td:nth-child(2) {\n    width: ' + (Config.adjustThreadContentWidthEnabled ? 643.2 : 823.2) + 'px;\n    display: inline-block;\n    overflow-wrap: break-word;\n  }\n  .readtext > table > tbody > tr > td:nth-child(2) table { word-break: break-all; }\n</style>\n');
     }
 
     if (Config.customCssEnabled) {
@@ -10258,9 +10258,9 @@ var followUsers = exports.followUsers = function followUsers() {
             var $this = $(this);
             if (Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.followUserList) > -1) {
                 if (Config.highlightFollowUserFloorEnabled) {
-                    $this.closest('.readidms').parent().next('.readtext').addClass('pd_follow_highlight');
+                    $this.closest('.readtext').addClass('pd_follow_highlight').find('> table > tbody > tr > td:nth-child(2) > div').addClass('pd_follow_highlight');
                 } else {
-                    $this.closest('.readidms').parent().next('.readtext').find('.pd_goto_link').addClass('pd_highlight');
+                    $this.closest('.readtext').find('.pd_goto_link').addClass('pd_highlight');
                 }
             }
         });
@@ -10325,8 +10325,7 @@ var blockUsers = exports.blockUsers = function blockUsers() {
                 var type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
-                var $floor = $this.closest('.readidms').parent();
-                $floor.next('.readtext').remove();
+                var $floor = $this.closest('.readtext');
                 $floor.prev('.readlou').remove();
                 $floor.remove();
             }
@@ -10483,15 +10482,14 @@ var blockThread = exports.blockThread = function blockThread() {
         var title = Read.getThreadTitle();
         if (!title) return;
         var $userName = $('.readidmsbottom > a[href^="profile.php?action=show"]').eq(0);
-        if (!$userName.closest('.readidms').parent().next('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').text().includes('楼主')) return;
+        if (!$userName.closest('.readtext').find('> table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child').text().includes('楼主')) return;
         var userName = Util.getFloorUserName($userName.text());
         if (!userName) return;
         var _fid2 = parseInt($('input[name="fid"]:first').val());
         if (!_fid2) return;
         if (isBlock(title, userName, _fid2)) {
             num++;
-            var $floor = $userName.closest('.readidms').parent();
-            $floor.next('.readtext').remove();
+            var $floor = $userName.closest('.readtext');
             $floor.prev('.readlou').remove();
             $floor.remove();
         }
@@ -10970,7 +10968,7 @@ var addSlowActionChecked = exports.addSlowActionChecked = function addSlowAction
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSignTips = exports.blockUselessThreadButtons = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.addSignTips = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -11023,11 +11021,11 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
  */
 var addFloorGotoLink = exports.addFloorGotoLink = function addFloorGotoLink() {
     var sf = Util.getThreadSfParam();
-    $('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').each(function () {
+    $('.readtext').find('> table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child').each(function () {
         var $this = $(this);
         var floorText = $this.text();
         if (!/^\d+楼/.test(floorText)) return;
-        var linkName = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        var linkName = $this.closest('.readtext').prev('.readlou').prev('a').attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         var url = Util.getHostNameUrl() + 'read.php?tid=' + Util.getUrlParam('tid') + '&spid=' + linkName + (sf ? '&sf=' + sf : '');
         $this.html($this.html().replace(/(\d+)楼/, '<a class="pd_goto_link" href="' + url + '" title="\u590D\u5236\u697C\u5C42\u94FE\u63A5">$1\u697C</a>'));
@@ -11064,9 +11062,9 @@ var addFastGotoFloorInput = exports.addFastGotoFloorInput = function addFastGoto
 var fastGotoFloor = exports.fastGotoFloor = function fastGotoFloor() {
     var floor = parseInt(Util.getUrlParam('floor'));
     if (!floor || floor < 0) return;
-    var $floorNode = $('.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:first-child:contains("' + floor + '\u697C")');
+    var $floorNode = $('.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child:contains("' + floor + '\u697C")');
     if (!$floorNode.length) return;
-    var linkName = $floorNode.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+    var linkName = $floorNode.closest('.readtext').prev('.readlou').prev('a').attr('name');
     if (!linkName || !/^\d+$/.test(linkName)) return;
     location.hash = '#' + linkName;
 };
@@ -11077,11 +11075,8 @@ var fastGotoFloor = exports.fastGotoFloor = function fastGotoFloor() {
  * @param {string} color 神秘颜色
  */
 var modifyFloorSmColor = exports.modifyFloorSmColor = function modifyFloorSmColor($elem, color) {
-    $elem.css('color', color).prev('.readidmsbottom_j').css('background', color).prev('.readidmsbottom_s').css({
-        'color': color,
-        'border-color': color
-    });
-    $elem.closest('.readidms').css('box-shadow', '1px 1px 2px 2px ' + color);
+    $elem.css('color', color).parent('.readidmsbottom').next('.readidmsbottom').find('> span:nth-child(2)').css('color', color).parent('.readidmsbottom').next('.readidmsbottom').find('> span:nth-child(2)').css('color', color);
+    $elem.closest('.readtext').css('box-shadow', '1px 1px 2px 2px ' + color).find('> table > tbody > tr > td:nth-child(2) > div').css('box-shadow', '1px 1px 2px 2px ' + color);
 };
 
 /**
@@ -11099,7 +11094,7 @@ var modifyMySmColor = exports.modifyMySmColor = function modifyMySmColor() {
  */
 var adjustThreadContentFontSize = exports.adjustThreadContentFontSize = function adjustThreadContentFontSize() {
     if (Config.threadContentFontSize > 0 && Config.threadContentFontSize !== 12) {
-        $('head').append('\n<style>\n  .readtext > table > tbody > tr > td { font-size: ' + Config.threadContentFontSize + 'px; line-height: 1.6em; width: 100%; }\n  .readtext > table > tbody > tr > td > div > div:first-child,\n  .readtext > table > tbody > tr > td > div > div:nth-child(2),\n  .readtext .read_fds {\n    font-size: 14px;\n    line-height: 22px;\n  }\n</style>\n');
+        $('head').append('\n<style>\n  .readtext > table > tbody > tr > td:nth-child(2) { font-size: ' + Config.threadContentFontSize + 'px; line-height: 1.6em; width: 100%; }\n  .readtext > table > tbody > tr > td:nth-child(2) > div > div:first-child,\n  .readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2),\n  .readtext .read_fds {\n    font-size: 14px;\n    line-height: 22px;\n  }\n</style>\n');
     }
 };
 
@@ -11209,7 +11204,7 @@ var statFloor = exports.statFloor = function statFloor(tid, startPage, endPage, 
                 $('.readtext', html.replace(/src="[^"]+"/g, '')).each(function () {
                     var data = {};
                     var $floor = $(this);
-                    var $floorHeader = $floor.prev('div').prev('.readlou');
+                    var $floorHeader = $floor.prev('.readlou');
                     var floor = parseInt($floorHeader.find('> div:nth-child(2) > span:first-child').text());
                     if (!floor) return;
                     if (floor < startFloor) return;
@@ -11305,7 +11300,7 @@ var showStatFloorDialog = exports.showStatFloorDialog = function showStatFloorDi
         }
         if (isRemoveTopFloor) {
             var $topFloor = $('.readtext:first');
-            if ($topFloor.prev('div').prev('.readlou').prev('a').attr('name') === 'tpc') {
+            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
                 var topFloorUserName = $topFloor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show&uid="]').text();
                 list = list.map(function (data) {
                     return data && data.userName !== topFloorUserName ? data : null;
@@ -11549,8 +11544,8 @@ var getMultiQuoteData = exports.getMultiQuoteData = function getMultiQuoteData()
         var $floor = $(this).closest('.readtext');
         var matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         var floor = matches ? parseInt(matches[1]) : 0;
-        var pid = $floor.prev('div').prev('.readlou').prev('a').attr('name');
-        var userName = Util.getFloorUserName($floor.prev('div').find('.readidmsbottom > a').text());
+        var pid = $floor.prev('.readlou').prev('a').attr('name');
+        var userName = Util.getFloorUserName($floor.find('.readidmsbottom > a[href^="profile.php?action=show&uid="]').text());
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -11563,7 +11558,7 @@ var getMultiQuoteData = exports.getMultiQuoteData = function getMultiQuoteData()
 var addMultiQuoteButton = exports.addMultiQuoteButton = function addMultiQuoteButton() {
     var replyUrl = $('a[href^="post.php?action=reply"].b_tit2').attr('href');
     if (!replyUrl) return;
-    $('<label title="多重引用" class="pd_multi_quote_chk"><input type="checkbox"> 引</label>').appendTo('.readtext > table > tbody > tr > td > div > div:nth-child(2)').find('input').click(function () {
+    $('<label title="多重引用" class="pd_multi_quote_chk"><input type="checkbox"> 引</label>').appendTo('.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2)').find('input').click(function () {
         var tid = parseInt(Util.getUrlParam('tid'));
         var data = localStorage[_Const2.default.multiQuoteStorageName];
         if (data) {
@@ -11618,10 +11613,7 @@ var addUserMemo = exports.addUserMemo = function addUserMemo() {
         if (!key) return;
 
         var memo = Config.userMemoList[key];
-        var memoText = memo;
-        var maxLength = 24;
-        if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
-        $this.parent().append('<div class="pd_user_memo" title="\u5907\u6CE8\uFF1A' + memo + '">(' + memoText + ')</div>');
+        $this.after('<span class="pd_custom_tips pd_user_memo" title="\u5907\u6CE8\uFF1A' + memo + '">[?]</span>');
     });
 };
 
@@ -11717,7 +11709,7 @@ var addMoreSmileLink = exports.addMoreSmileLink = function addMoreSmileLink() {
  * 在帖子页面解析多媒体标签
  */
 var parseMediaTag = exports.parseMediaTag = function parseMediaTag() {
-    $('.readtext > table > tbody > tr > td').each(function () {
+    $('.readtext > table > tbody > tr > td:nth-child(2)').each(function () {
         var $this = $(this);
         var html = $this.html();
         if (/\[(audio|video)\](http|ftp)[^<>]+\[\/(audio|video)\]/.test(html)) {
@@ -11731,11 +11723,11 @@ var parseMediaTag = exports.parseMediaTag = function parseMediaTag() {
  */
 var showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = function showAttachImageOutsideSellBox() {
     if (Util.getCurrentThreadPage() !== 1) return;
-    var $area = $('.readtext:first > table > tbody > tr > td');
+    var $area = $('.readtext:first > table > tbody > tr > td:nth-child(2)');
     if (!$area.find('select[name="buyers"]').length) return;
     var html = $area.html();
     if (/\[attachment=\d+\]/.test(html)) {
-        var pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('.readlou').prev('a').attr('name');
+        var pid = $area.closest('.readtext').prev('.readlou').prev('.readlou').prev('a').attr('name');
         var tid = Util.getUrlParam('tid');
         $area.html(html.replace(/\[attachment=(\d+)\]/g, '<img src="job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1" alt="[\u9644\u4EF6\u56FE\u7247]" style="max-width: 550px;" ' + ('onclick="if(this.width>=550) window.open(\'job.php?action=download&pid=' + pid + '&tid=' + tid + '&aid=$1\');">')));
     }
@@ -11951,21 +11943,10 @@ var showBuyThreadLogDialog = exports.showBuyThreadLogDialog = function showBuyTh
 };
 
 /**
- * 屏蔽帖子页面无用的按钮
- */
-var blockUselessThreadButtons = exports.blockUselessThreadButtons = function blockUselessThreadButtons() {
-    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
-        var $this = $(this);
-        if ($this.text().trim() === _Info2.default.userName) return;
-        $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();
-    });
-};
-
-/**
  * 鼠标移到到签名可显示提示
  */
 var addSignTips = exports.addSignTips = function addSignTips() {
-    $('.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:nth-child(3)').each(function () {
+    $('.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:nth-child(3)').each(function () {
         var $this = $(this);
         $this.attr('title', $this.text()).addClass('pd_custom_tips');
     });
@@ -12543,7 +12524,7 @@ var handleGoodPostSubmit = exports.handleGoodPostSubmit = function handleGoodPos
 
     $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
         var $this = $(this);
-        var $floor = $this.closest('.readlou').next().next('.readtext');
+        var $floor = $this.closest('.readtext');
         if ($this.data('highlight')) {
             $floor.removeClass('pd_good_post_mark');
             $this.removeData('highlight');
@@ -12554,7 +12535,7 @@ var handleGoodPostSubmit = exports.handleGoodPostSubmit = function handleGoodPos
     }).on('click', 'a[id^="cztz"]', function () {
         var $this = $(this);
         if ($this.data('wait')) return;
-        var $floor = $this.closest('div[id^="floor"]').next('.readtext');
+        var $floor = $this.closest('.readtext');
         var url = $floor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show"]').attr('href');
         var flag = false;
         $('.readidmsbottom, .readidmbottom').find('a[href="' + url + '"]').each(function () {

@@ -169,7 +169,7 @@ export const handleGoodPostSubmit = function () {
 
     $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
         let $this = $(this);
-        let $floor = $this.closest('.readlou').next().next('.readtext');
+        let $floor = $this.closest('.readtext');
         if ($this.data('highlight')) {
             $floor.removeClass('pd_good_post_mark');
             $this.removeData('highlight');
@@ -181,7 +181,7 @@ export const handleGoodPostSubmit = function () {
     }).on('click', 'a[id^="cztz"]', function () {
         let $this = $(this);
         if ($this.data('wait')) return;
-        let $floor = $this.closest('div[id^="floor"]').next('.readtext');
+        let $floor = $this.closest('.readtext');
         let url = $floor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show"]').attr('href');
         let flag = false;
         $('.readidmsbottom, .readidmbottom').find(`a[href="${url}"]`).each(function () {

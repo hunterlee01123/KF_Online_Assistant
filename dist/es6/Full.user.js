@@ -10,7 +10,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.0.1
+// @version     14.1.0
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -99,7 +99,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '14.0.1';
+const version = '14.1.0';
 
 /**
  * 导出模块
@@ -8478,7 +8478,7 @@ const appendCss = exports.appendCss = function () {
   .readtext .pd_goto_link:hover { color: #51d; }
   .pd_multi_quote_chk { margin-right: 2px; float: right; }
   .pd_fast_goto_floor { margin-right: 10px !important; line-height: 32px; }
-  .pd_user_memo { font-size: 12px; color: #999; line-height: 1.2; margin-bottom: 10px; }
+  .pd_user_memo { font-size: 12px; color: #999; margin-left: 5px; }
   .readtext img[onclick] { width: auto; max-width: 850px; }
   .read_fds { text-align: left !important; font-weight: normal !important; font-style: normal !important; }
   .pd_code_area { max-height: 550px; margin-top: 1em; overflow-y: auto; font-size: 12px; font-family: Consolas, "Courier New"; }
@@ -8570,12 +8570,12 @@ const appendCss = exports.appendCss = function () {
     if (location.pathname === '/read.php' && (Config.threadContentFontSize > 0 || Config.adjustThreadContentWidthEnabled)) {
         $('head').append(`
 <style>
-  .readtext > table > tbody > tr > td {
+  .readtext > table > tbody > tr > td:nth-child(2) {
     width: ${Config.adjustThreadContentWidthEnabled ? 643.2 : 823.2}px;
     display: inline-block;
     overflow-wrap: break-word;
   }
-  .readtext > table > tbody > tr > td table { word-break: break-all; }
+  .readtext > table > tbody > tr > td:nth-child(2) table { word-break: break-all; }
 </style>
 `);
     }
@@ -9007,9 +9007,9 @@ const followUsers = exports.followUsers = function () {
             let $this = $(this);
             if (Util.inFollowOrBlockUserList(Util.getFloorUserName($this.text()), Config.followUserList) > -1) {
                 if (Config.highlightFollowUserFloorEnabled) {
-                    $this.closest('.readidms').parent().next('.readtext').addClass('pd_follow_highlight');
+                    $this.closest('.readtext').addClass('pd_follow_highlight').find('> table > tbody > tr > td:nth-child(2) > div').addClass('pd_follow_highlight');
                 } else {
-                    $this.closest('.readidms').parent().next('.readtext').find('.pd_goto_link').addClass('pd_highlight');
+                    $this.closest('.readtext').find('.pd_goto_link').addClass('pd_highlight');
                 }
             }
         });
@@ -9074,8 +9074,7 @@ const blockUsers = exports.blockUsers = function () {
                 let type = Config.blockUserList[index].type;
                 if (i === 0 && page === 1 && type > 1) return;else if ((i === 0 && page !== 1 || i > 0) && type === 1) return;
                 num++;
-                let $floor = $this.closest('.readidms').parent();
-                $floor.next('.readtext').remove();
+                let $floor = $this.closest('.readtext');
                 $floor.prev('.readlou').remove();
                 $floor.remove();
             }
@@ -9183,15 +9182,14 @@ const blockThread = exports.blockThread = function () {
         let title = Read.getThreadTitle();
         if (!title) return;
         let $userName = $('.readidmsbottom > a[href^="profile.php?action=show"]').eq(0);
-        if (!$userName.closest('.readidms').parent().next('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').text().includes('楼主')) return;
+        if (!$userName.closest('.readtext').find('> table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child').text().includes('楼主')) return;
         let userName = Util.getFloorUserName($userName.text());
         if (!userName) return;
         let fid = parseInt($('input[name="fid"]:first').val());
         if (!fid) return;
         if (isBlock(title, userName, fid)) {
             num++;
-            let $floor = $userName.closest('.readidms').parent();
-            $floor.next('.readtext').remove();
+            let $floor = $userName.closest('.readtext');
             $floor.prev('.readlou').remove();
             $floor.remove();
         }
@@ -9725,7 +9723,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSignTips = exports.blockUselessThreadButtons = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
+exports.addSignTips = exports.showBuyThreadLogDialog = exports.recordBuyThreadLog = exports.clearBuyThreadLog = exports.writeBuyThreadLog = exports.readBuyThreadLog = exports.getThreadTitle = exports.showAttachImageOutsideSellBox = exports.parseMediaTag = exports.addMoreSmileLink = exports.addCopyCodeLink = exports.addUserMemo = exports.modifyKFOtherDomainLink = exports.addMultiQuoteButton = exports.getMultiQuoteData = exports.handleBuyThreadBtn = exports.buyThreads = exports.showStatFloorDialog = exports.statFloor = exports.addStatAndBuyThreadBtn = exports.addCopyBuyersListOption = exports.adjustThreadContentFontSize = exports.modifyMySmColor = exports.modifyFloorSmColor = exports.fastGotoFloor = exports.addFastGotoFloorInput = exports.addFloorGotoLink = undefined;
 
 var _Info = require('./Info');
 
@@ -9774,11 +9772,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 const addFloorGotoLink = exports.addFloorGotoLink = function () {
     let sf = Util.getThreadSfParam();
-    $('.readtext').find('> table > tbody > tr > td > div > div:nth-child(2) > span:first-child').each(function () {
+    $('.readtext').find('> table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child').each(function () {
         let $this = $(this);
         let floorText = $this.text();
         if (!/^\d+楼/.test(floorText)) return;
-        let linkName = $this.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+        let linkName = $this.closest('.readtext').prev('.readlou').prev('a').attr('name');
         if (!linkName || !/^\d+$/.test(linkName)) return;
         let url = `${Util.getHostNameUrl()}read.php?tid=${Util.getUrlParam('tid')}&spid=${linkName}${sf ? '&sf=' + sf : ''}`;
         $this.html($this.html().replace(/(\d+)楼/, `<a class="pd_goto_link" href="${url}" title="复制楼层链接">$1楼</a>`));
@@ -9822,9 +9820,9 @@ const addFastGotoFloorInput = exports.addFastGotoFloorInput = function () {
 const fastGotoFloor = exports.fastGotoFloor = function () {
     let floor = parseInt(Util.getUrlParam('floor'));
     if (!floor || floor < 0) return;
-    let $floorNode = $(`.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
+    let $floorNode = $(`.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:first-child:contains("${floor}楼")`);
     if (!$floorNode.length) return;
-    let linkName = $floorNode.closest('.readtext').prev('div').prev('.readlou').prev('a').attr('name');
+    let linkName = $floorNode.closest('.readtext').prev('.readlou').prev('a').attr('name');
     if (!linkName || !/^\d+$/.test(linkName)) return;
     location.hash = '#' + linkName;
 };
@@ -9835,11 +9833,8 @@ const fastGotoFloor = exports.fastGotoFloor = function () {
  * @param {string} color 神秘颜色
  */
 const modifyFloorSmColor = exports.modifyFloorSmColor = function ($elem, color) {
-    $elem.css('color', color).prev('.readidmsbottom_j').css('background', color).prev('.readidmsbottom_s').css({
-        'color': color,
-        'border-color': color
-    });
-    $elem.closest('.readidms').css('box-shadow', `1px 1px 2px 2px ${color}`);
+    $elem.css('color', color).parent('.readidmsbottom').next('.readidmsbottom').find('> span:nth-child(2)').css('color', color).parent('.readidmsbottom').next('.readidmsbottom').find('> span:nth-child(2)').css('color', color);
+    $elem.closest('.readtext').css('box-shadow', `1px 1px 2px 2px ${color}`).find('> table > tbody > tr > td:nth-child(2) > div').css('box-shadow', `1px 1px 2px 2px ${color}`);
 };
 
 /**
@@ -9859,9 +9854,9 @@ const adjustThreadContentFontSize = exports.adjustThreadContentFontSize = functi
     if (Config.threadContentFontSize > 0 && Config.threadContentFontSize !== 12) {
         $('head').append(`
 <style>
-  .readtext > table > tbody > tr > td { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; width: 100%; }
-  .readtext > table > tbody > tr > td > div > div:first-child,
-  .readtext > table > tbody > tr > td > div > div:nth-child(2),
+  .readtext > table > tbody > tr > td:nth-child(2) { font-size: ${Config.threadContentFontSize}px; line-height: 1.6em; width: 100%; }
+  .readtext > table > tbody > tr > td:nth-child(2) > div > div:first-child,
+  .readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2),
   .readtext .read_fds {
     font-size: 14px;
     line-height: 22px;
@@ -9980,7 +9975,7 @@ const statFloor = exports.statFloor = function (tid, startPage, endPage, startFl
                 $('.readtext', html.replace(/src="[^"]+"/g, '')).each(function () {
                     let data = {};
                     let $floor = $(this);
-                    let $floorHeader = $floor.prev('div').prev('.readlou');
+                    let $floorHeader = $floor.prev('.readlou');
                     let floor = parseInt($floorHeader.find('> div:nth-child(2) > span:first-child').text());
                     if (!floor) return;
                     if (floor < startFloor) return;
@@ -10111,7 +10106,7 @@ const showStatFloorDialog = exports.showStatFloorDialog = function (floorList) {
         }
         if (isRemoveTopFloor) {
             let $topFloor = $('.readtext:first');
-            if ($topFloor.prev('div').prev('.readlou').prev('a').attr('name') === 'tpc') {
+            if ($topFloor.prev('.readlou').prev('a').attr('name') === 'tpc') {
                 let topFloorUserName = $topFloor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show&uid="]').text();
                 list = list.map(data => data && data.userName !== topFloorUserName ? data : null);
             }
@@ -10330,8 +10325,8 @@ const getMultiQuoteData = exports.getMultiQuoteData = function () {
         let $floor = $(this).closest('.readtext');
         let matches = /(\d+)楼/.exec($floor.find('.pd_goto_link').text());
         let floor = matches ? parseInt(matches[1]) : 0;
-        let pid = $floor.prev('div').prev('.readlou').prev('a').attr('name');
-        let userName = Util.getFloorUserName($floor.prev('div').find('.readidmsbottom > a').text());
+        let pid = $floor.prev('.readlou').prev('a').attr('name');
+        let userName = Util.getFloorUserName($floor.find('.readidmsbottom > a[href^="profile.php?action=show&uid="]').text());
         if (!userName) return;
         quoteList.push({ floor: floor, pid: pid, userName: userName });
     });
@@ -10344,7 +10339,7 @@ const getMultiQuoteData = exports.getMultiQuoteData = function () {
 const addMultiQuoteButton = exports.addMultiQuoteButton = function () {
     let replyUrl = $('a[href^="post.php?action=reply"].b_tit2').attr('href');
     if (!replyUrl) return;
-    $('<label title="多重引用" class="pd_multi_quote_chk"><input type="checkbox"> 引</label>').appendTo('.readtext > table > tbody > tr > td > div > div:nth-child(2)').find('input').click(function () {
+    $('<label title="多重引用" class="pd_multi_quote_chk"><input type="checkbox"> 引</label>').appendTo('.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2)').find('input').click(function () {
         let tid = parseInt(Util.getUrlParam('tid'));
         let data = localStorage[_Const2.default.multiQuoteStorageName];
         if (data) {
@@ -10397,10 +10392,7 @@ const addUserMemo = exports.addUserMemo = function () {
         if (!key) return;
 
         let memo = Config.userMemoList[key];
-        let memoText = memo;
-        let maxLength = 24;
-        if (memo.length > maxLength) memoText = memoText.substring(0, maxLength) + '&hellip;';
-        $this.parent().append(`<div class="pd_user_memo" title="备注：${memo}">(${memoText})</div>`);
+        $this.after(`<span class="pd_custom_tips pd_user_memo" title="备注：${memo}">[?]</span>`);
     });
 };
 
@@ -10499,7 +10491,7 @@ const addMoreSmileLink = exports.addMoreSmileLink = function () {
  * 在帖子页面解析多媒体标签
  */
 const parseMediaTag = exports.parseMediaTag = function () {
-    $('.readtext > table > tbody > tr > td').each(function () {
+    $('.readtext > table > tbody > tr > td:nth-child(2)').each(function () {
         let $this = $(this);
         let html = $this.html();
         if (/\[(audio|video)\](http|ftp)[^<>]+\[\/(audio|video)\]/.test(html)) {
@@ -10513,11 +10505,11 @@ const parseMediaTag = exports.parseMediaTag = function () {
  */
 const showAttachImageOutsideSellBox = exports.showAttachImageOutsideSellBox = function () {
     if (Util.getCurrentThreadPage() !== 1) return;
-    let $area = $('.readtext:first > table > tbody > tr > td');
+    let $area = $('.readtext:first > table > tbody > tr > td:nth-child(2)');
     if (!$area.find('select[name="buyers"]').length) return;
     let html = $area.html();
     if (/\[attachment=\d+\]/.test(html)) {
-        let pid = $area.closest('.readtext').prev('div').prev('.readlou').prev('.readlou').prev('a').attr('name');
+        let pid = $area.closest('.readtext').prev('.readlou').prev('.readlou').prev('a').attr('name');
         let tid = Util.getUrlParam('tid');
         $area.html(html.replace(/\[attachment=(\d+)\]/g, `<img src="job.php?action=download&pid=${pid}&tid=${tid}&aid=$1" alt="[附件图片]" style="max-width: 550px;" ` + `onclick="if(this.width>=550) window.open('job.php?action=download&pid=${pid}&tid=${tid}&aid=$1');">`));
     }
@@ -10666,21 +10658,10 @@ const showBuyThreadLogDialog = exports.showBuyThreadLogDialog = function () {
 };
 
 /**
- * 屏蔽帖子页面无用的按钮
- */
-const blockUselessThreadButtons = exports.blockUselessThreadButtons = function () {
-    $('.readidmsbottom > a[href^="profile.php?action=show"], .readidmbottom > a[href^="profile.php?action=show"]').each(function () {
-        let $this = $(this);
-        if ($this.text().trim() === _Info2.default.userName) return;
-        $this.closest('.readtext').prev().prev('.readlou').find('a[href^="post.php?action=modify"]').hide();
-    });
-};
-
-/**
  * 鼠标移到到签名可显示提示
  */
 const addSignTips = exports.addSignTips = function () {
-    $('.readtext > table > tbody > tr > td > div > div:nth-child(2) > span:nth-child(3)').each(function () {
+    $('.readtext > table > tbody > tr > td:nth-child(2) > div > div:nth-child(2) > span:nth-child(3)').each(function () {
         let $this = $(this);
         $this.attr('title', $this.text()).addClass('pd_custom_tips');
     });
@@ -11197,7 +11178,7 @@ const handleGoodPostSubmit = exports.handleGoodPostSubmit = function () {
 
     $('#alldiv').on('click', 'a[onclick^="cztz"]', function () {
         let $this = $(this);
-        let $floor = $this.closest('.readlou').next().next('.readtext');
+        let $floor = $this.closest('.readtext');
         if ($this.data('highlight')) {
             $floor.removeClass('pd_good_post_mark');
             $this.removeData('highlight');
@@ -11208,7 +11189,7 @@ const handleGoodPostSubmit = exports.handleGoodPostSubmit = function () {
     }).on('click', 'a[id^="cztz"]', function () {
         let $this = $(this);
         if ($this.data('wait')) return;
-        let $floor = $this.closest('div[id^="floor"]').next('.readtext');
+        let $floor = $this.closest('.readtext');
         let url = $floor.find('.readidmsbottom, .readidmbottom').find('a[href^="profile.php?action=show"]').attr('href');
         let flag = false;
         $('.readidmsbottom, .readidmbottom').find(`a[href="${url}"]`).each(function () {
