@@ -7,10 +7,11 @@
 // @description KFOL必备！为绯月Galgame论坛增加了大量人性化、自动化的功能，更多功能开发中……
 // @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.meta.js
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Common.user.js
+// @include     https://*fygal.com/*
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.1.0
+// @version     14.1.1
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -97,7 +98,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '14.1.0';
+const version = '14.1.1';
 
 /**
  * 导出模块
@@ -8300,7 +8301,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
     $('form[name="FORM"]').submit(function () {
         let $textArea = $(this).find('textarea[name="atc_content"]');
         if (!$textArea.length) return;
-        $textArea.val($textArea.val().replace(new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'), 'https://bbs.ikfol.com/$1.php'));
+        $textArea.val($textArea.val().replace(new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'), 'https://bbs.fygal.com/$1.php'));
     });
 };
 
@@ -10373,7 +10374,7 @@ const modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function () {
         let $this = $(this);
         let url = $this.attr('href');
         if (/m\.miaola\.info\//i.test(url)) return;
-        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|ikfol|kfacg|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
+        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|ikfol|kfacg|fygal|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
 };
