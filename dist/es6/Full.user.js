@@ -8,10 +8,11 @@
 // @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Full.meta.js
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/Full.user.js
 // @include     https://*fygal.com/*
+// @include     https://*bakabbs.com/*
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.1.1
+// @version     14.1.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -100,7 +101,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '14.1.1';
+const version = '14.1.2';
 
 /**
  * 导出模块
@@ -10376,7 +10377,7 @@ const modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function () {
         let $this = $(this);
         let url = $this.attr('href');
         if (/m\.miaola\.info\//i.test(url)) return;
-        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|ikfol|kfacg|fygal|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
+        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|ikfol|kfacg|fygal|bakabbs|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
 };

@@ -9,10 +9,11 @@
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
 // @include     https://*fygal.com/*
+// @include     https://*bakabbs.com/*
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.1.1
+// @version     14.1.2
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
