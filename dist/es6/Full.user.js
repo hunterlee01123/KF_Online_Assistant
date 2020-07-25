@@ -12,7 +12,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.1.2
+// @version     14.1.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -101,7 +101,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '14.1.2';
+const version = '14.1.3';
 
 /**
  * 导出模块
@@ -163,6 +163,7 @@ const init = function () {
     if (parseInt(Util.getCookie(_Const2.default.lootCompleteCookieName)) === 2) {
         $('#pdLoot').addClass('pd_rightbox1_gray');
     }
+
     if (_Info2.default.isInHomePage) {
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
@@ -258,11 +259,6 @@ const init = function () {
         Other.addUserNameLinkInRankPage();
     } else if (location.pathname === '/kf_fw_ig_index.php') {
         Loot.init();
-    } else if (location.pathname === '/kf_fygnew_3214.php') {
-        Loot.addGuGuZhenBtns();
-        if (Config.guGuZhenAutoJumpEnabled) {
-            Loot.autoJumpGuGuZhen();
-        }
     }
 
     if (Config.blockUserEnabled) Public.blockUsers();
@@ -717,13 +713,6 @@ const Config = exports.Config = {
     // 在当天的指定时间之后购买物品（本地时间），例：00:40:00
     buyItemAfterTime: '00:40:00',
 
-    // 是否已开启咕咕镇，true：开启；false：关闭
-    guGuZhenEnabled: false,
-    // 是否全选咕咕镇协议，true：开启；false：关闭
-    guGuZhenSelectAllEnabled: false,
-    // 是否自动跳转咕咕镇，true：开启；false：关闭
-    guGuZhenAutoJumpEnabled: false,
-
     // 是否在神秘等级升级后进行提醒，只在首页生效，true：开启；false：关闭
     smLevelUpAlertEnabled: false,
     // 是否在神秘系数排名发生变化时进行提醒，只在首页生效，true：开启；false：关闭
@@ -791,6 +780,8 @@ const Config = exports.Config = {
     browseType: 'auto',
     // 是否为管理成员，true：开启；false：关闭
     adminMemberEnabled: false,
+    // 是否保持顶部导航栏置顶，true：开启；false：关闭
+    navBarAlwaysTopEnabled: true,
 
     // 是否开启关注用户的功能，true：开启；false：关闭
     followUserEnabled: false,
@@ -1284,6 +1275,10 @@ const show = exports.show = function () {
       <label>
         <input name="adminMemberEnabled" type="checkbox"> 我是管理成员
         <span class="pd_cfg_tips" title="管理成员可开启此功能，助手会开启部分只有管理成员才能使用的功能，非管理成员开启此功能无效">[?]</span>
+      </label>
+      <label class="pd_cfg_ml">
+        <input name="navBarAlwaysTopEnabled" type="checkbox"> 保持导航栏置顶
+        <span class="pd_cfg_tips" title="保持顶部导航栏置顶（旧版本浏览器可能无法生效）">[?]</span>
       </label>
     </fieldset>
   </div>
@@ -2135,12 +2130,12 @@ const showBuyItemTipsDialog = function () {
     在物品ID列表填入相应的物品ID，可自动购买所需的物品，每天最多可购买两次。<br>
     （即：只购买1种物品的话最多可购买2次；购买2种物品的话每种物品只能购买1次，合计2次）<br>
     <strong>各物品ID：</strong><br>
-    <b>等级经验药丸</b>：101；<b>等级经验药丸（蛋）</b>：102；<b>修炼手册</b>：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
+    <strike><b>等级经验药丸</b>：101；<b>等级经验药丸（蛋）</b>：102；</strike><b>修炼手册</b>：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
     <strong>格式：</strong><br>
     两次购买之间的物品ID请用<b>英文逗号</b>分隔；同一次购买的物品ID如用<b>竖线</b>分隔，表示前一种物品如费用不足，可自动更换为购买另一种物品。<br>
     <strong>例子：</strong><br>
-    <b>102</b>：表示只购买一次[102]物品。<br>
-    <b>102,101</b>：表示第1次购买[102]物品，第2次购买[101]物品。<br>
+    <b>103</b>：表示只购买一次[102]物品。<br>
+    <b>103,101</b>：表示第1次购买[102]物品，第2次购买[101]物品。<br>
     <b>102|101,103|102|101</b>：表示第1次先尝试购买[102]物品，如费用不足则购买[101]物品；第2次先尝试购买[103]物品，如费用不足则购买[102]物品，依然不足则购买[101]物品。<br>
   </div>
 </div>`;
@@ -5624,7 +5619,7 @@ const showLogText = function (log, $dialog) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.autoJumpGuGuZhen = exports.addGuGuZhenBtns = exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLootInfo = exports.updateLootInfo = exports.changePointsAndArms = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
+exports.getPromoteHaloCostByTypeId = exports.promoteHalo = exports.getPromoteHaloInfo = exports.setHaloInfo = exports.getHaloInfo = exports.addUserLinkInHaloPage = exports.addUserLinkInPkListPage = exports.getLevelInfoList = exports.getLevelInfo = exports.getLogList = exports.getLootInfo = exports.updateLootInfo = exports.changePointsAndArms = exports.getPointByProperty = exports.getPropertyByPoint = exports.getExtraPoint = exports.getFieldNameByPointName = exports.getPointNameByFieldName = exports.getSkillAttack = exports.getCurrentAssignedPoint = exports.enhanceLootIndexPage = exports.init = undefined;
 
 var _Info = require('./Info');
 
@@ -7280,81 +7275,6 @@ const getPromoteHaloCostByTypeId = exports.getPromoteHaloCostByTypeId = function
     }
 };
 
-/**
- * 添加咕咕镇协议相关按钮
- */
-const addGuGuZhenBtns = exports.addGuGuZhenBtns = function () {
-    /**
-     * 获取是否全部同意
-     * @returns {boolean} 是否全部同意
-     */
-    const checkIsAllow = function () {
-        let isAllow = true;
-        $('input[name^="tongyi"]').each(function () {
-            let flag = $(this).prop('checked');
-            if (!flag) {
-                isAllow = false;
-                return false;
-            }
-        });
-        return isAllow;
-    };
-
-    $(`
-<div style="margin-bottom: 15px;">
-    <label style="color: #00f; font-weight: bold;">
-      <input id="guGuZhenSelectAllEnabled" type="checkbox"> 全选
-    </label>
-    <label class="pd_highlight" style="font-weight: bold; margin-left: 20px;">
-      <input id="guGuZhenAutoJumpEnabled" type="checkbox" ${Config.guGuZhenAutoJumpEnabled ? 'checked' : ''}> 以后自动跳转到咕咕镇
-    </label>
-</div>
-`).appendTo($('input[name="submit"]').parent().prev());
-    $('#guGuZhenSelectAllEnabled').click(function () {
-        let $this = $(this);
-        Config.guGuZhenSelectAllEnabled = $this.prop('checked');
-        $('input[name^="tongyi"]').prop('checked', Config.guGuZhenSelectAllEnabled);
-        (0, _Config.write)();
-    });
-    $('#guGuZhenAutoJumpEnabled').click(function () {
-        let $this = $(this);
-        let flag = $this.prop('checked');
-        if (flag && !checkIsAllow()) {
-            alert('请先同意协议');
-            return false;
-        }
-
-        Config.guGuZhenAutoJumpEnabled = flag;
-        (0, _Config.write)();
-    });
-
-    if (Config.guGuZhenSelectAllEnabled) {
-        $('#guGuZhenSelectAllEnabled').click();
-    }
-
-    $('input[name="submit"]').click(function () {
-        if (checkIsAllow()) {
-            if (!Config.guGuZhenEnabled) {
-                Config.guGuZhenEnabled = true;
-                (0, _Config.write)();
-            }
-        } else {
-            Config.guGuZhenAutoJumpEnabled = false;
-            (0, _Config.write)();
-        }
-    });
-};
-
-/**
- * 自动跳转咕咕镇
- */
-const autoJumpGuGuZhen = exports.autoJumpGuGuZhen = function () {
-    if ($('[name^="tongyi"]').length === 5) {
-        Msg.show('<strong>正在跳转中，请稍候...</strong>', 30);
-        location.href = 'fyg_sjcdwj.php?go=play&j=0a0a0a0a0';
-    }
-};
-
 },{"./Config":3,"./Const":5,"./Dialog":6,"./Info":8,"./Item":9,"./Log":10,"./Msg":13,"./Public":16,"./Script":18,"./TmpLog":20,"./Util":21}],13:[function(require,module,exports){
 /* 消息模块 */
 'use strict';
@@ -8456,7 +8376,7 @@ const appendCss = exports.appendCss = function () {
     text-indent: 13px; cursor: pointer; z-index: 1004;
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
-  .drow { z-index: 1001 !important; }
+  #alldiv > .drow:nth-child(2) { ${Config.navBarAlwaysTopEnabled ? 'position: sticky; top: 0;' : ''} z-index: 1001 !important; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
@@ -9203,27 +9123,25 @@ const blockThread = exports.blockThread = function () {
  * 为顶部导航栏添加快捷导航菜单
  */
 const addFastNavMenu = exports.addFastNavMenu = function () {
-    let $menuBtn = $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(2) > a:contains("最新共享")');
+    let $menuBtn = $('#alldiv > .drow:nth-child(2) > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a[href="fyg_sjcdwj.php?go=play"]');
     if (!$menuBtn.length) return;
     $menuBtn.text('快捷导航').attr('href', 'javascript:;').after(`
 <ul class="topmenuo2">
-  <li><a href="kf_share.php">最新共享</a></li>
+  <li><a href="fyg_sjcdwj.php?go=play" target="_blank">咕咕镇</a></li>
   <li><a href="search.php?authorid=${_Info2.default.uid}">我的主题</a></li>
   <li><a href="personal.php?action=post">我的回复</a></li>
-  <li><a href="kf_fygnew_3214.php">咕咕镇</a></li>
-  ${!Config.guGuZhenEnabled ? `
-    <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
-    <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
-    <li><a href="kf_fw_ig_halo.php">战力光环</a></li>` : ''}
-  <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
   <li><a href="profile.php?action=favor">收藏</a></li>
   <li><a href="profile.php?action=friend">好友列表</a></li>
+  <li><a href="kf_fw_ig_index.php">争夺奖励</a></li>
+  <li><a href="kf_fw_ig_mybp.php">我的物品</a></li>
+  <li><a href="kf_fw_ig_halo.php">战力光环</a></li>
+  <li><a href="kf_fw_ig_shop.php">物品商店</a></li>
   ${_Info2.default.isInSpecialDomain ? '<li><a href="https://m.miaola.info/" target="_blank">移动版</a></li>' : ''}
   ${_Const2.default.customFastNavMenuContent}
 </ul>`);
 
     if (Config.adminMemberEnabled) {
-        $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(3) > a:contains("聊天交流")').next('ul').append('<li><a href="thread.php?fid=93">内部管理专用</a></li>');
+        $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(4) > a:contains("聊天交流")').next('ul').append('<li><a href="thread.php?fid=93">内部管理专用</a></li>');
     }
 };
 
@@ -9350,6 +9268,7 @@ const bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = fu
         let type = $menu.data('type');
         $searchTypeList = $(`
 
+
 <ul class="pd_search_type_list">
   <li>标题</li><li>作者</li><li>关键词</li><li $
 {
@@ -9357,6 +9276,7 @@ const bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = fu
 }
 >用户名</li>
 </ul>
+
 `).appendTo('body');
         let offset = $menu.offset();
         $searchTypeList.css('top', offset.top + $menu.height() + 2).css('left', offset.left + 1);
@@ -9421,6 +9341,7 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
         if ($('#' + dialogName).length > 0) return;
         let html = `
 
+
 <div class="pd_cfg_main">
   <input name="step" value="2" type="hidden">
   <input name="method" value="AND" type="hidden">
@@ -9439,6 +9360,7 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
     <label><input name="searchRange" type="radio" value="current" disabled> 本版</label>
   </div>
 </div>
+
 `;
         let $dialog = Dialog.create(dialogName, '搜索', html);
 
@@ -9519,6 +9441,7 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
     (0, _Config.read)();
     let html = `
 
+
 <div class="pd_cfg_main">
   <div>
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
@@ -9531,12 +9454,15 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>
 </div>
+
 `;
     let $dialog = Dialog.create(dialogName, `
+
 导入或导出$
 {
     title
 }
+
 `, html);
     let settings = $.type(configName) === 'object' ? configName.read() : Config[configName];
 
@@ -9586,6 +9512,7 @@ const showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDia
     let log = read();
     let html = `
 
+
 <div class="pd_cfg_main">
   <strong>导入$
 {
@@ -9612,18 +9539,22 @@ const showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDia
   <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
   <button data-action="close" type="button">关闭</button>
 </div>
+
 `;
 
     let $dialog = Dialog.create(dialogName, `
+
 导入或导出$
 {
     name
 }
+
 `, html);
     $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
         e.preventDefault();
         let action = $(this).attr('name');
         if (!confirm(`
+
 是否将文本框中的$
 {
     name
@@ -9633,6 +9564,7 @@ $
     action === 'overwrite' ? '覆盖' : '合并'
 }
 到本地？
+
 `)) return;
         let newLog = $.trim($dialog.find('[name="log"]').val());
         if (!newLog) return;
@@ -9640,32 +9572,38 @@ $
             newLog = JSON.parse(newLog);
         } catch (ex) {
             alert(`
+
 $
 {
     name
 }
 有错误
+
 `);
             return;
         }
         if (!newLog || $.type(newLog) !== 'object') {
             alert(`
+
 $
 {
     name
 }
 有错误
+
 `);
             return;
         }
         if (action === 'merge' && typeof merge === 'function') log = merge(log, newLog);else log = newLog;
         write(log);
         alert(`
+
 $
 {
     name
 }
 已导入
+
 `);
         if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
     });
@@ -9699,6 +9637,7 @@ const changeNewTipsColor = exports.changeNewTipsColor = function () {
 const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
     $(`
 
+
 <label style="margin-right: 5px;">
   <input name="slowActionEnabled" type="checkbox" $
 {
@@ -9707,6 +9646,7 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
 > 慢速操作
   <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），如使用道具、打开盒子等">[?]</span>
 </label>
+
 `).prependTo($area).find('input[name="slowActionEnabled"]').click(function () {
         let checked = $(this).prop('checked');
         $('input[name="slowActionEnabled"]').not(this).prop('checked', checked);

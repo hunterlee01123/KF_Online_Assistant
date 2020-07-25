@@ -13,7 +13,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.1.2
+// @version     14.1.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue

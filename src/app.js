@@ -20,7 +20,7 @@ import * as SelfRate from './module/SelfRate';
 import * as ConfigDialog from './module/ConfigDialog';
 
 // 版本号
-const version = '14.1.2';
+const version = '14.1.3';
 
 /**
  * 导出模块
@@ -82,6 +82,7 @@ const init = function () {
     if (parseInt(Util.getCookie(Const.lootCompleteCookieName)) === 2) {
         $('#pdLoot').addClass('pd_rightbox1_gray');
     }
+
     if (Info.isInHomePage) {
         if (Config.smLevelUpAlertEnabled) Index.smLevelUpAlert();
         if (Config.smRankChangeAlertEnabled) Index.smRankChangeAlert();
@@ -177,11 +178,6 @@ const init = function () {
         Other.addUserNameLinkInRankPage();
     } else if (location.pathname === '/kf_fw_ig_index.php') {
         Loot.init();
-    } else if (location.pathname === '/kf_fygnew_3214.php') {
-        Loot.addGuGuZhenBtns();
-        if (Config.guGuZhenAutoJumpEnabled) {
-            Loot.autoJumpGuGuZhen();
-        }
     }
 
     if (Config.blockUserEnabled) Public.blockUsers();

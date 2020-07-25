@@ -283,6 +283,10 @@ export const show = function () {
         <input name="adminMemberEnabled" type="checkbox"> 我是管理成员
         <span class="pd_cfg_tips" title="管理成员可开启此功能，助手会开启部分只有管理成员才能使用的功能，非管理成员开启此功能无效">[?]</span>
       </label>
+      <label class="pd_cfg_ml">
+        <input name="navBarAlwaysTopEnabled" type="checkbox"> 保持导航栏置顶
+        <span class="pd_cfg_tips" title="保持顶部导航栏置顶（旧版本浏览器可能无法生效）">[?]</span>
+      </label>
     </fieldset>
   </div>
 </div>
@@ -1167,12 +1171,12 @@ const showBuyItemTipsDialog = function () {
     在物品ID列表填入相应的物品ID，可自动购买所需的物品，每天最多可购买两次。<br>
     （即：只购买1种物品的话最多可购买2次；购买2种物品的话每种物品只能购买1次，合计2次）<br>
     <strong>各物品ID：</strong><br>
-    <b>等级经验药丸</b>：101；<b>等级经验药丸（蛋）</b>：102；<b>修炼手册</b>：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
+    <strike><b>等级经验药丸</b>：101；<b>等级经验药丸（蛋）</b>：102；</strike><b>修炼手册</b>：103。<span class="pd_notice">（注：重生之药请手动购买）</span><br>
     <strong>格式：</strong><br>
     两次购买之间的物品ID请用<b>英文逗号</b>分隔；同一次购买的物品ID如用<b>竖线</b>分隔，表示前一种物品如费用不足，可自动更换为购买另一种物品。<br>
     <strong>例子：</strong><br>
-    <b>102</b>：表示只购买一次[102]物品。<br>
-    <b>102,101</b>：表示第1次购买[102]物品，第2次购买[101]物品。<br>
+    <b>103</b>：表示只购买一次[102]物品。<br>
+    <b>103,101</b>：表示第1次购买[102]物品，第2次购买[101]物品。<br>
     <b>102|101,103|102|101</b>：表示第1次先尝试购买[102]物品，如费用不足则购买[101]物品；第2次先尝试购买[103]物品，如费用不足则购买[102]物品，依然不足则购买[101]物品。<br>
   </div>
 </div>`;
