@@ -12,7 +12,7 @@
 // @include     https://*ikfol.com/*
 // @include     https://*9moe.com/*
 // @include     https://*kfgal.com/*
-// @version     14.1.3
+// @version     14.1.4
 // @grant       none
 // @run-at      document-end
 // @license     MIT
@@ -99,7 +99,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '14.1.3';
+const version = '14.1.4';
 
 /**
  * 导出模块
@@ -143,6 +143,7 @@ const init = function () {
     exportModule();
     (0, _Config.init)();
     Public.checkBrowserType();
+    Public.modifyDomainTips();
     Public.appendCss();
     Public.addConfigAndLogDialogLink();
     if (Config.animationEffectOffEnabled) $.fx.off = true;
@@ -8233,7 +8234,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.addSlowActionChecked = exports.changeNewTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.handleSideBarLink = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
+exports.modifyDomainTips = exports.addSlowActionChecked = exports.changeNewTipsColor = exports.showCommonImportOrExportLogDialog = exports.showCommonImportOrExportConfigDialog = exports.turnPageViaKeyboard = exports.repairBbsErrorCode = exports.addSearchDialogLink = exports.makeSearchByBelowTwoKeyWordAvailable = exports.bindSearchTypeSelectMenuClick = exports.bindElementTitleClick = exports.showElementTitleTips = exports.changeIdColor = exports.addFastNavMenu = exports.blockThread = exports.blockUsers = exports.followUsers = exports.getDailyBonus = exports.startTimingMode = exports.getNextTimingIntervalInfo = exports.addPolyfill = exports.showFormatLog = exports.preventCloseWindowWhenActioning = exports.handleSideBarLink = exports.addConfigAndLogDialogLink = exports.appendCss = exports.checkBrowserType = exports.getSafeId = exports.getUidAndUserName = undefined;
 
 var _Info = require('./Info');
 
@@ -8375,6 +8376,7 @@ const appendCss = exports.appendCss = function () {
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   #alldiv > .drow:nth-child(2) { ${Config.navBarAlwaysTopEnabled ? 'position: sticky; top: 0;' : ''} z-index: 1001 !important; }
+  .pd_domain_tips { position: absolute; top: 0; width: 1200px; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
@@ -9139,7 +9141,7 @@ const addFastNavMenu = exports.addFastNavMenu = function () {
 </ul>`);
 
     if (Config.adminMemberEnabled) {
-        $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(4) > a:contains("聊天交流")').next('ul').append('<li><a href="thread.php?fid=93">内部管理专用</a></li>');
+        $('#alldiv > .drow:nth-child(2) > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(4) > a:contains("聊天交流")').next('ul').append('<li><a href="thread.php?fid=93">内部管理专用</a></li>');
     }
 };
 
@@ -9265,17 +9267,9 @@ const bindSearchTypeSelectMenuClick = exports.bindSearchTypeSelectMenuClick = fu
         }
         let type = $menu.data('type');
         $searchTypeList = $(`
-
-
 <ul class="pd_search_type_list">
-  <li>标题</li><li>作者</li><li>关键词</li><li $
-{
-    !Config.adminMemberEnabled ? 'hidden' : ''
-}
->用户名</li>
-</ul>
-
-`).appendTo('body');
+  <li>标题</li><li>作者</li><li>关键词</li><li${!Config.adminMemberEnabled ? 'hidden' : ''}>用户名</li>
+</ul>`).appendTo('body');
         let offset = $menu.offset();
         $searchTypeList.css('top', offset.top + $menu.height() + 2).css('left', offset.left + 1);
         if (type === 'dialog') {
@@ -9338,8 +9332,6 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
         const dialogName = 'pdSearchDialog';
         if ($('#' + dialogName).length > 0) return;
         let html = `
-
-
 <div class="pd_cfg_main">
   <input name="step" value="2" type="hidden">
   <input name="method" value="AND" type="hidden">
@@ -9357,9 +9349,7 @@ const addSearchDialogLink = exports.addSearchDialogLink = function () {
     <label><input name="searchRange" type="radio" value="all" checked> 全站 </label>
     <label><input name="searchRange" type="radio" value="current" disabled> 本版</label>
   </div>
-</div>
-
-`;
+</div>`;
         let $dialog = Dialog.create(dialogName, '搜索', html);
 
         $dialog.closest('form').attr({
@@ -9438,8 +9428,6 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
     if ($('#' + dialogName).length > 0) return;
     (0, _Config.read)();
     let html = `
-
-
 <div class="pd_cfg_main">
   <div>
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
@@ -9451,17 +9439,8 @@ const showCommonImportOrExportConfigDialog = exports.showCommonImportOrExportCon
   <span class="pd_cfg_about"></span>
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>
-</div>
-
-`;
-    let $dialog = Dialog.create(dialogName, `
-
-导入或导出$
-{
-    title
-}
-
-`, html);
+</div>`;
+    let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
     let settings = $.type(configName) === 'object' ? configName.read() : Config[configName];
 
     $dialog.submit(function (e) {
@@ -9509,100 +9488,37 @@ const showCommonImportOrExportLogDialog = exports.showCommonImportOrExportLogDia
     if ($('#' + dialogName).length > 0) return;
     let log = read();
     let html = `
-
-
 <div class="pd_cfg_main">
-  <strong>导入$
-{
-    name
-}
-：</strong>将$
-{
-    name
-}
-内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-  <strong>导出$
-{
-    name
-}
-：</strong>复制文本框里的内容并粘贴到别处即可<br>
+  <strong>导入${name}：</strong>将${name}内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
+  <strong>导出${name}：</strong>复制文本框里的内容并粘贴到别处即可<br>
   <textarea name="log" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button name="merge" type="button" $
-{
-    typeof merge !== 'function' ? 'hidden' : ''
-}
->合并记录</button>
+  <button name="merge" type="button" ${typeof merge !== 'function' ? 'hidden' : ''}>合并记录</button>
   <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
   <button data-action="close" type="button">关闭</button>
-</div>
+</div>`;
 
-`;
-
-    let $dialog = Dialog.create(dialogName, `
-
-导入或导出$
-{
-    name
-}
-
-`, html);
+    let $dialog = Dialog.create(dialogName, `导入或导出${name}`, html);
     $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
         e.preventDefault();
         let action = $(this).attr('name');
-        if (!confirm(`
-
-是否将文本框中的$
-{
-    name
-}
-$
-{
-    action === 'overwrite' ? '覆盖' : '合并'
-}
-到本地？
-
-`)) return;
+        if (!confirm(`是否将文本框中的${name}${action === 'overwrite' ? '覆盖' : '合并'}到本地？`)) return;
         let newLog = $.trim($dialog.find('[name="log"]').val());
         if (!newLog) return;
         try {
             newLog = JSON.parse(newLog);
         } catch (ex) {
-            alert(`
-
-$
-{
-    name
-}
-有错误
-
-`);
+            alert(`${name}有错误`);
             return;
         }
         if (!newLog || $.type(newLog) !== 'object') {
-            alert(`
-
-$
-{
-    name
-}
-有错误
-
-`);
+            alert(`${name}有错误`);
             return;
         }
         if (action === 'merge' && typeof merge === 'function') log = merge(log, newLog);else log = newLog;
         write(log);
-        alert(`
-
-$
-{
-    name
-}
-已导入
-
-`);
+        alert(`${name}已导入`);
         if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();else location.reload();
     });
 
@@ -9634,17 +9550,10 @@ const changeNewTipsColor = exports.changeNewTipsColor = function () {
  */
 const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
     $(`
-
-
 <label style="margin-right: 5px;">
-  <input name="slowActionEnabled" type="checkbox" $
-{
-    Config.slowActionEnabled ? 'checked' : ''
-}
-> 慢速操作
+  <input name="slowActionEnabled" type="checkbox" ${Config.slowActionEnabled ? 'checked' : ''}> 慢速操作
   <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），如使用道具、打开盒子等">[?]</span>
 </label>
-
 `).prependTo($area).find('input[name="slowActionEnabled"]').click(function () {
         let checked = $(this).prop('checked');
         $('input[name="slowActionEnabled"]').not(this).prop('checked', checked);
@@ -9654,6 +9563,13 @@ const addSlowActionChecked = exports.addSlowActionChecked = function ($area) {
             (0, _Config.write)();
         }
     });
+};
+
+/**
+ * 修改域名更换提示区域
+ */
+const modifyDomainTips = exports.modifyDomainTips = function () {
+    $('#alldiv > .drow:first-child').has('div:contains("主域名更换")').insertBefore('#alldiv > .drow:last-child').addClass('pd_domain_tips').parent().find('> .drow:first-child').css('margin-top', '40px');
 };
 
 },{"./Config":3,"./ConfigDialog":4,"./Const":5,"./Dialog":6,"./Info":8,"./Item":9,"./Log":10,"./LogDialog":11,"./Loot":12,"./Msg":13,"./Read":17,"./Script":18,"./TmpLog":20,"./Util":21}],17:[function(require,module,exports){

@@ -101,6 +101,7 @@ export const appendCss = function () {
   }
   .pd_search_type_list li:hover { color: #fff; background-color: #87c3cf; }
   #alldiv > .drow:nth-child(2) { ${Config.navBarAlwaysTopEnabled ? 'position: sticky; top: 0;' : ''} z-index: 1001 !important; }
+  .pd_domain_tips { position: absolute; top: 0; width: 1200px; }
   
   /* 消息框 */
   .pd_mask { position: fixed; width: 100%; height: 100%; left: 0; top: 0; z-index: 1000; }
@@ -865,9 +866,9 @@ export const blockThread = function () {
  * 为顶部导航栏添加快捷导航菜单
  */
 export const addFastNavMenu = function () {
-    let $menuBtn = $('#alldiv > .drow:nth-child(2) > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a[href="fyg_sjcdwj.php?go=play"]');
-    if (!$menuBtn.length) return;
-    $menuBtn.text('快捷导航').attr('href', 'javascript:;').after(`
+        let $menuBtn = $('#alldiv > .drow:nth-child(2) > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:last-child > a[href="fyg_sjcdwj.php?go=play"]');
+        if (!$menuBtn.length) return;
+        $menuBtn.text('快捷导航').attr('href', 'javascript:;').after(`
 <ul class="topmenuo2">
   <li><a href="fyg_sjcdwj.php?go=play" target="_blank">咕咕镇</a></li>
   <li><a href="search.php?authorid=${Info.uid}">我的主题</a></li>
@@ -882,12 +883,12 @@ export const addFastNavMenu = function () {
   ${Const.customFastNavMenuContent}
 </ul>`);
 
-    if (Config.adminMemberEnabled) {
-        $('.drow > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(4) > a:contains("聊天交流")').next('ul').append(
-            '<li><a href="thread.php?fid=93">内部管理专用</a></li>'
-        );
+        if (Config.adminMemberEnabled) {
+            $('#alldiv > .drow:nth-child(2) > .dcol > .topmenuo > .topmenuo1 > .topmenuo3:nth-last-child(4) > a:contains("聊天交流")').next('ul').append(
+                '<li><a href="thread.php?fid=93">内部管理专用</a></li>'
+            );
+        }
     }
-}
 
 ;
 
@@ -901,11 +902,7 @@ export const changeIdColor = function () {
      * 写入Cookie
      */
     const setCookie = function () {
-        let nextTime = Util.getDate(
-
-`+${Config.autoChangeIdColorInterval}h`
-
-);
+        let nextTime = Util.getDate(`+${Config.autoChangeIdColorInterval}h`);
         Util.setCookie(Const.autoChangeIdColorCookieName, nextTime.getTime(), nextTime);
     };
 
@@ -963,18 +960,17 @@ export const changeIdColor = function () {
             }
 
             $.get(
+                `kf_growup.php?ok=2&safeid=${safeId}&color=${nextId}&t=${$.now()}`
 
-`kf_growup.php?ok=2&safeid=${safeId}&color=${nextId}&t=${$.now()}`
-
-, function (html) {
-                setCookie();
-                showFormatLog('自动更换ID颜色', html);
-                let {msg} = Util.getResponseMsg(html);
-                if (/等级颜色修改完毕/.test(msg)) {
-                    console.log('ID颜色更换为：' + nextId);
-                    TmpLog.setValue(Const.prevAutoChangeIdColorTmpLogName, nextId);
-                }
-            });
+                , function (html) {
+                    setCookie();
+                    showFormatLog('自动更换ID颜色', html);
+                    let {msg} = Util.getResponseMsg(html);
+                    if (/等级颜色修改完毕/.test(msg)) {
+                        console.log('ID颜色更换为：' + nextId);
+                        TmpLog.setValue(Const.prevAutoChangeIdColorTmpLogName, nextId);
+                    }
+                });
         } else {
             setCookie();
         }
@@ -989,125 +985,113 @@ export const changeIdColor = function () {
 export const showElementTitleTips = function (e, title) {
     $('.pd_title_tips').remove();
     if (!title || !e.originalEvent) return;
-    $(
-
-`<div class="pd_title_tips">${title.replace(/\n/g, '<br>')}</div>`)
-.appendTo('body')
-.css('left', e.originalEvent.pageX - 20)
-.css('top', e.originalEvent.pageY + 15);
+    $(`<div class="pd_title_tips">${title.replace(/\n/g, '<br>')}</div>`)
+        .appendTo('body')
+        .css('left', e.originalEvent.pageX - 20)
+        .css('top', e.originalEvent.pageY + 15);
 };
 
-    /**
-     * 绑定包含title属性元素的点击事件（用于移动版浏览器）
-     */
+/**
+ * 绑定包含title属性元素的点击事件（用于移动版浏览器）
+ */
 export const bindElementTitleClick = function () {
-let excludeNodeNameList = ['A', 'IMG', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT'];
-$(document).click(function (e) {
-let target = e.target;
-if (!target.title && !excludeNodeNameList.includes(target.nodeName) && target.parentNode && target.parentNode.title)
-target = target.parentNode;
-if (target.title && !excludeNodeNameList.includes(target.nodeName) &&
-(!target.id || !target.id.startsWith('wy_')) && !$(target).is('.pd_editor_btn')
-) {
-showElementTitleTips(e, target.title);
-} else {
-$('.pd_title_tips').remove();
-}
-});
+    let excludeNodeNameList = ['A', 'IMG', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT'];
+    $(document).click(function (e) {
+        let target = e.target;
+        if (!target.title && !excludeNodeNameList.includes(target.nodeName) && target.parentNode && target.parentNode.title)
+            target = target.parentNode;
+        if (target.title && !excludeNodeNameList.includes(target.nodeName) &&
+            (!target.id || !target.id.startsWith('wy_')) && !$(target).is('.pd_editor_btn')
+        ) {
+            showElementTitleTips(e, target.title);
+        } else {
+            $('.pd_title_tips').remove();
+        }
+    });
 };
 
-    /**
-     * 绑定搜索类型下拉菜单点击事件
-     */
+/**
+ * 绑定搜索类型下拉菜单点击事件
+ */
 export const bindSearchTypeSelectMenuClick = function () {
-$(document).on('click', '.pd_search_type', function () {
-let $menu = $(this);
-let $searchTypeList = $('.pd_search_type_list');
-if ($searchTypeList.length > 0) {
-$searchTypeList.remove();
-return;
-}
-let type = $menu.data('type');
-$searchTypeList = $(`
-
-
+    $(document).on('click', '.pd_search_type', function () {
+        let $menu = $(this);
+        let $searchTypeList = $('.pd_search_type_list');
+        if ($searchTypeList.length > 0) {
+            $searchTypeList.remove();
+            return;
+        }
+        let type = $menu.data('type');
+        $searchTypeList = $(`
 <ul class="pd_search_type_list">
-  <li>标题</li><li>作者</li><li>关键词</li><li $
-{
-    !Config.adminMemberEnabled ? 'hidden' : ''
-}
->用户名</li>
-</ul>
+  <li>标题</li><li>作者</li><li>关键词</li><li${!Config.adminMemberEnabled ? 'hidden' : ''}>用户名</li>
+</ul>`).appendTo('body');
+        let offset = $menu.offset();
+        $searchTypeList.css('top', offset.top + $menu.height() + 2).css('left', offset.left + 1);
+        if (type === 'dialog') {
+            $searchTypeList.css({
+                'width': '65px',
+                'left': offset.left - 1
+            });
+        }
+        $searchTypeList.on('click', 'li', function () {
+            let $this = $(this);
+            let type = $this.text().trim();
+            let $form = $menu.closest('form');
+            let $keyWord = $form.find('input[name="keyword"], input[name="pwuser"]');
+            $menu.find('span').text(type);
+            if (type !== '关键词' && type !== '用户名') $form.attr('action', 'search.php?');
+            if (type === '作者') $keyWord.attr('name', 'pwuser');
+            else $keyWord.attr('name', 'keyword');
+            let $searchRange = $form.find('[name="searchRange"][value="current"]');
+            if ($searchRange.length > 0) {
+                $searchRange.prop('disabled', type === '关键词' || type === '用户名' || !$searchRange.data('enabled'));
+            }
+            $searchTypeList.remove();
+            $keyWord.focus();
+        });
+    });
 
-`).appendTo('body');
-let offset = $menu.offset();
-$searchTypeList.css('top', offset.top + $menu.height() + 2).css('left', offset.left + 1);
-if (type === 'dialog') {
-$searchTypeList.css({
-'width': '65px',
-'left': offset.left - 1
-});
-}
-$searchTypeList.on('click', 'li', function () {
-let $this = $(this);
-let type = $this.text().trim();
-let $form = $menu.closest('form');
-let $keyWord = $form.find('input[name="keyword"], input[name="pwuser"]');
-$menu.find('span').text(type);
-if (type !== '关键词' && type !== '用户名') $form.attr('action', 'search.php?');
-if (type === '作者') $keyWord.attr('name', 'pwuser');
-else $keyWord.attr('name', 'keyword');
-let $searchRange = $form.find('[name="searchRange"][value="current"]');
-if ($searchRange.length > 0) {
-$searchRange.prop('disabled', type === '关键词' || type === '用户名' || !$searchRange.data('enabled'));
-}
-$searchTypeList.remove();
-$keyWord.focus();
-});
-});
-
-$(document).on('submit', 'form[name="pdSearchForm"]', function () {
-let $this = $(this);
-let type = $.trim($this.find('.pd_search_type > span').text());
-if (type === '关键词') {
-$this.attr('action', 'guanjianci.php?gjc=' + $this.find('input[name="keyword"]').val());
-} else if (type === '用户名') {
-$this.attr('action', 'profile.php?action=show&username=' + $this.find('input[name="keyword"]').val());
-}
-});
+    $(document).on('submit', 'form[name="pdSearchForm"]', function () {
+        let $this = $(this);
+        let type = $.trim($this.find('.pd_search_type > span').text());
+        if (type === '关键词') {
+            $this.attr('action', 'guanjianci.php?gjc=' + $this.find('input[name="keyword"]').val());
+        } else if (type === '用户名') {
+            $this.attr('action', 'profile.php?action=show&username=' + $this.find('input[name="keyword"]').val());
+        }
+    });
 };
 
-    /**
-     * 可使用2个字以下的关键字进行搜索
-     */
+/**
+ * 可使用2个字以下的关键字进行搜索
+ */
 export const makeSearchByBelowTwoKeyWordAvailable = function () {
-$(document).on('submit', 'form[action="search.php?"]', function () {
-let $this = $(this);
-let $keyWord = $this.find('input[name="keyword"]');
-if (!$keyWord.length) return;
-let keyWord = $.trim($keyWord.val());
-if (!keyWord || Util.getStrByteLen(keyWord) > 2) return;
-$keyWord.val(keyWord + ' ' + keyWord);
-setTimeout(() => {
-$keyWord.val(keyWord);
-}, 200);
-});
+    $(document).on('submit', 'form[action="search.php?"]', function () {
+        let $this = $(this);
+        let $keyWord = $this.find('input[name="keyword"]');
+        if (!$keyWord.length) return;
+        let keyWord = $.trim($keyWord.val());
+        if (!keyWord || Util.getStrByteLen(keyWord) > 2) return;
+        $keyWord.val(keyWord + ' ' + keyWord);
+        setTimeout(() => {
+            $keyWord.val(keyWord);
+        }, 200);
+    });
 };
 
-    /**
-     * 添加搜索对话框链接
-     */
+/**
+ * 添加搜索对话框链接
+ */
 export const addSearchDialogLink = function () {
-$('<li><a data-name="search" href="#">搜索</a></li>')
-.insertBefore(Info.$userMenu.find('> li:nth-last-child(3)'))
-.find('[data-name="search"]')
-.click(function (e) {
-e.preventDefault();
-const dialogName = 'pdSearchDialog';
-if ($('#' + dialogName).length > 0) return;
-let html = `
-
-
+    $('<li><a data-name="search" href="#">搜索</a></li>')
+        .insertBefore(Info.$userMenu.find('> li:nth-last-child(3)'))
+        .find('[data-name="search"]')
+        .click(function (e) {
+            e.preventDefault();
+            const dialogName = 'pdSearchDialog';
+            if ($('#' + dialogName).length > 0) return;
+            let html = `
 <div class="pd_cfg_main">
   <input name="step" value="2" type="hidden">
   <input name="method" value="AND" type="hidden">
@@ -1125,89 +1109,85 @@ let html = `
     <label><input name="searchRange" type="radio" value="all" checked> 全站 </label>
     <label><input name="searchRange" type="radio" value="current" disabled> 本版</label>
   </div>
-</div>
+</div>`;
+            let $dialog = Dialog.create(dialogName, '搜索', html);
 
-`;
-let $dialog = Dialog.create(dialogName, '搜索', html);
+            $dialog.closest('form').attr({
+                'name': 'pdSearchForm',
+                'action': 'search.php?',
+                'method': 'post',
+                'target': '_blank',
+            }).off('submit');
 
-$dialog.closest('form').attr({
-'name': 'pdSearchForm',
-'action': 'search.php?',
-'method': 'post',
-'target': '_blank',
-}).off('submit');
+            let fid = parseInt($('input[name="f_fid"]:first, input[name="fid"]:first').val());
+            if (fid) {
+                $dialog.find('[name="searchRange"]').click(function () {
+                    let $this = $(this);
+                    $dialog.find('input[name="f_fid"]').val($this.val() === 'current' ? fid : 'all');
+                });
+                $dialog.find('[name="searchRange"][value="current"]').prop('disabled', false).data('enabled', true).click();
+            }
 
-let fid = parseInt($('input[name="f_fid"]:first, input[name="fid"]:first').val());
-if (fid) {
-$dialog.find('[name="searchRange"]').click(function () {
-let $this = $(this);
-$dialog.find('input[name="f_fid"]').val($this.val() === 'current' ? fid : 'all');
-});
-$dialog.find('[name="searchRange"][value="current"]').prop('disabled', false).data('enabled', true).click();
-}
+            $dialog.keydown(function (e) {
+                if (e.keyCode === 27) {
+                    $('.pd_search_type_list').remove();
+                }
+            }).find('h1 > span').click(function () {
+                $('.pd_search_type_list').remove();
+            });
 
-$dialog.keydown(function (e) {
-if (e.keyCode === 27) {
-$('.pd_search_type_list').remove();
-}
-}).find('h1 > span').click(function () {
-$('.pd_search_type_list').remove();
-});
-
-Dialog.show(dialogName);
-$dialog.find('[name="keyword"]').focus();
-});
+            Dialog.show(dialogName);
+            $dialog.find('[name="keyword"]').focus();
+        });
 };
 
-    /**
-     * 修复论坛错误代码
-     */
+/**
+ * 修复论坛错误代码
+ */
 export const repairBbsErrorCode = function () {
-Info.w.is_ie = false;
-if (location.pathname === '/read.php') Info.w.strlen = Util.getStrByteLen;
+    Info.w.is_ie = false;
+    if (location.pathname === '/read.php') Info.w.strlen = Util.getStrByteLen;
 };
 
-    /**
-     * 通过左右键进行翻页
-     */
+/**
+ * 通过左右键进行翻页
+ */
 export const turnPageViaKeyboard = function () {
-$(document).keydown(function (e) {
-if (e.keyCode !== 37 && e.keyCode !== 39) return;
-if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-let $page = $('.pages:first');
-let $curPage = $page.find('li > a[href="javascript:;"]');
-if (!$curPage.length) return;
-let curPage = Util.getCurrentThreadPage();
-let url = '';
-if (e.keyCode === 37) {
-if (curPage <= 1) return;
-url = $page.find('li > a:contains("上一页")').attr('href');
-} else {
-let matches = /&page=(\d+)/.exec($page.find('li:last-child > a').attr('href'));
-if (!matches) return;
-if (curPage >= parseInt(matches[1])) return;
-url = $page.find('li > a:contains("下一页")').attr('href');
-}
-location.href = url;
-});
+    $(document).keydown(function (e) {
+        if (e.keyCode !== 37 && e.keyCode !== 39) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        let $page = $('.pages:first');
+        let $curPage = $page.find('li > a[href="javascript:;"]');
+        if (!$curPage.length) return;
+        let curPage = Util.getCurrentThreadPage();
+        let url = '';
+        if (e.keyCode === 37) {
+            if (curPage <= 1) return;
+            url = $page.find('li > a:contains("上一页")').attr('href');
+        } else {
+            let matches = /&page=(\d+)/.exec($page.find('li:last-child > a').attr('href'));
+            if (!matches) return;
+            if (curPage >= parseInt(matches[1])) return;
+            url = $page.find('li > a:contains("下一页")').attr('href');
+        }
+        location.href = url;
+    });
 };
 
-    /**
-     * 显示通用的导入/导出设置对话框
-     * @param {string} title 对话框标题
-     * @param {string|{}} configName 设置名称或设置方法对象
-     * @param {function} configName.read 读取设置的方法
-     * @param {function} configName.write 写入设置的方法
-     * @param {?function} [callback] 回调方法
-     * @param {?function} [callbackAfterSubmit] 在提交之后的回调方法
-     */
+/**
+ * 显示通用的导入/导出设置对话框
+ * @param {string} title 对话框标题
+ * @param {string|{}} configName 设置名称或设置方法对象
+ * @param {function} configName.read 读取设置的方法
+ * @param {function} configName.write 写入设置的方法
+ * @param {?function} [callback] 回调方法
+ * @param {?function} [callbackAfterSubmit] 在提交之后的回调方法
+ */
 export const showCommonImportOrExportConfigDialog = function (title, configName, callback, callbackAfterSubmit) {
-const dialogName = 'pdCommonImOrExConfigDialog';
-if ($('#' + dialogName).length > 0) return;
-readConfig();
-let html = `
-
-
+    const dialogName = 'pdCommonImOrExConfigDialog';
+    if ($('#' + dialogName).length > 0) return;
+    readConfig();
+    let html = `
 <div class="pd_cfg_main">
   <div>
     <strong>导入设置：</strong>将设置内容粘贴到文本框中并点击保存按钮即可<br>
@@ -1219,210 +1199,140 @@ let html = `
   <span class="pd_cfg_about"></span>
   <button type="submit">保存</button>
   <button data-action="close" type="button">取消</button>
-</div>
+</div>`;
+    let $dialog = Dialog.create(dialogName, `导入或导出${title}`, html);
+    let settings = $.type(configName) === 'object' ? configName.read() : Config[configName];
 
-`;
-let $dialog = Dialog.create(dialogName, `
-
-导入或导出$
-{
-    title
-}
-
-`, html);
-let settings = $.type(configName) === 'object' ? configName.read() : Config[configName];
-
-$dialog.submit(function (e) {
-e.preventDefault();
-if (!confirm('是否导入文本框中的设置？')) return;
-let options = $.trim($dialog.find('[name="commonConfig"]').val());
-if (!options) return;
-try {
-options = JSON.parse(options);
-} catch (ex) {
-alert('设置有错误');
-return;
-}
-if (!options || $.type(options) !== $.type(settings)) {
-alert('设置有错误');
-return;
-}
-if ($.type(configName) === 'object') {
-configName.write(options);
-} else {
-Config[configName] = options;
-writeConfig();
-}
-alert('设置已导入');
-Dialog.close(dialogName);
-if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();
-else location.reload();
-});
-Dialog.show(dialogName);
-$dialog.find('[name="commonConfig"]').val(JSON.stringify(settings)).select().focus();
-if (typeof callback === 'function') callback($dialog);
-Script.runFunc('Public.showCommonImportOrExportConfigDialog_after_', {title, configName});
+    $dialog.submit(function (e) {
+        e.preventDefault();
+        if (!confirm('是否导入文本框中的设置？')) return;
+        let options = $.trim($dialog.find('[name="commonConfig"]').val());
+        if (!options) return;
+        try {
+            options = JSON.parse(options);
+        } catch (ex) {
+            alert('设置有错误');
+            return;
+        }
+        if (!options || $.type(options) !== $.type(settings)) {
+            alert('设置有错误');
+            return;
+        }
+        if ($.type(configName) === 'object') {
+            configName.write(options);
+        } else {
+            Config[configName] = options;
+            writeConfig();
+        }
+        alert('设置已导入');
+        Dialog.close(dialogName);
+        if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();
+        else location.reload();
+    });
+    Dialog.show(dialogName);
+    $dialog.find('[name="commonConfig"]').val(JSON.stringify(settings)).select().focus();
+    if (typeof callback === 'function') callback($dialog);
+    Script.runFunc('Public.showCommonImportOrExportConfigDialog_after_', {title, configName});
 };
 
-    /**
-     * 显示通用的导入/导出记录对话框
-     * @param {string} name 记录名称
-     * @param {function} read 读取记录的方法
-     * @param {function} write 写入记录的方法
-     * @param {function} [merge] 获取合并后记录的方法
-     * @param {function} [callback] 回调方法
-     * @param {function} [callbackAfterSubmit] 在提交之后的回调方法
-     */
+/**
+ * 显示通用的导入/导出记录对话框
+ * @param {string} name 记录名称
+ * @param {function} read 读取记录的方法
+ * @param {function} write 写入记录的方法
+ * @param {function} [merge] 获取合并后记录的方法
+ * @param {function} [callback] 回调方法
+ * @param {function} [callbackAfterSubmit] 在提交之后的回调方法
+ */
 export const showCommonImportOrExportLogDialog = function ({name, read, write, merge, callback, callbackAfterSubmit}) {
-const dialogName = 'pdCommonImOrExLogDialog';
-if ($('#' + dialogName).length > 0) return;
-let log = read();
-let html = `
-
-
+    const dialogName = 'pdCommonImOrExLogDialog';
+    if ($('#' + dialogName).length > 0) return;
+    let log = read();
+    let html = `
 <div class="pd_cfg_main">
-  <strong>导入$
-{
-    name
-}
-：</strong>将$
-{
-    name
-}
-内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
-  <strong>导出$
-{
-    name
-}
-：</strong>复制文本框里的内容并粘贴到别处即可<br>
+  <strong>导入${name}：</strong>将${name}内容粘贴到文本框中并点击合并或覆盖按钮即可<br>
+  <strong>导出${name}：</strong>复制文本框里的内容并粘贴到别处即可<br>
   <textarea name="log" style="width: 600px; height: 400px; word-break: break-all;"></textarea>
 </div>
 <div class="pd_cfg_btns">
-  <button name="merge" type="button" $
-{
-    typeof merge !== 'function' ? 'hidden' : ''
-}
->合并记录</button>
+  <button name="merge" type="button" ${typeof merge !== 'function' ? 'hidden' : ''}>合并记录</button>
   <button name="overwrite" type="button" style="color: #f00;">覆盖记录</button>
   <button data-action="close" type="button">关闭</button>
-</div>
+</div>`;
 
-`;
+    let $dialog = Dialog.create(dialogName, `导入或导出${name}`, html);
+    $dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
+        e.preventDefault();
+        let action = $(this).attr('name');
+        if (!confirm(`是否将文本框中的${name}${action === 'overwrite' ? '覆盖' : '合并'}到本地？`)) return;
+        let newLog = $.trim($dialog.find('[name="log"]').val());
+        if (!newLog) return;
+        try {
+            newLog = JSON.parse(newLog);
+        } catch (ex) {
+            alert(`${name}有错误`);
+            return;
+        }
+        if (!newLog || $.type(newLog) !== 'object') {
+            alert(`${name}有错误`);
+            return;
+        }
+        if (action === 'merge' && typeof merge === 'function') log = merge(log, newLog);
+        else log = newLog;
+        write(log);
+        alert(`${name}已导入`);
+        if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();
+        else location.reload();
+    });
 
-let $dialog = Dialog.create(dialogName, `
-
-导入或导出$
-{
-    name
-}
-
-`, html);
-$dialog.find('[name="merge"], [name="overwrite"]').click(function (e) {
-e.preventDefault();
-let action = $(this).attr('name');
-if (!confirm(`
-
-是否将文本框中的$
-{
-    name
-}
-$
-{
-    action === 'overwrite' ? '覆盖' : '合并'
-}
-到本地？
-
-`)) return;
-let newLog = $.trim($dialog.find('[name="log"]').val());
-if (!newLog) return;
-try {
-newLog = JSON.parse(newLog);
-} catch (ex) {
-alert(`
-
-$
-{
-    name
-}
-有错误
-
-`);
-return;
-}
-if (!newLog || $.type(newLog) !== 'object') {
-alert(`
-
-$
-{
-    name
-}
-有错误
-
-`);
-return;
-}
-if (action === 'merge' && typeof merge === 'function') log = merge(log, newLog);
-else log = newLog;
-write(log);
-alert(`
-
-$
-{
-    name
-}
-已导入
-
-`);
-if (typeof callbackAfterSubmit === 'function') callbackAfterSubmit();
-else location.reload();
-});
-
-Dialog.show(dialogName);
-$dialog.find('[name="log"]').val(JSON.stringify(log)).select().focus();
-if (typeof callback === 'function') callback($dialog);
-Script.runFunc('Public.showCommonImportOrExportLogDialog_after_', {name, read, write, merge});
+    Dialog.show(dialogName);
+    $dialog.find('[name="log"]').val(JSON.stringify(log)).select().focus();
+    if (typeof callback === 'function') callback($dialog);
+    Script.runFunc('Public.showCommonImportOrExportLogDialog_after_', {name, read, write, merge});
 };
 
-    /**
-     * 修改顶部导航栏的用户名旁新提醒的颜色
-     */
+/**
+ * 修改顶部导航栏的用户名旁新提醒的颜色
+ */
 export const changeNewTipsColor = function () {
-let $msgTips = $('#pdUserName').find('span:first');
-if (!$msgTips.length) return;
-$msgTips.addClass('pd_new_tips');
-if (Info.$userMenu.find('a[href="message.php"]:contains("有新消息")').length > 0) {
-$msgTips.attr('id', 'pdNewMsgTips').css({'color': '#0099cc'});
-} else if (Info.$userMenu.find('a[href^="guanjianci.php?gjc="]:contains("有人@我")').length > 0) {
-$msgTips.attr('id', 'pdNewReplyTips');
-} else if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新评分")').length > 0) {
-$msgTips.attr('id', 'pdNewRateTips').css({'color': '#5cb85c'});
-}
+    let $msgTips = $('#pdUserName').find('span:first');
+    if (!$msgTips.length) return;
+    $msgTips.addClass('pd_new_tips');
+    if (Info.$userMenu.find('a[href="message.php"]:contains("有新消息")').length > 0) {
+        $msgTips.attr('id', 'pdNewMsgTips').css({'color': '#0099cc'});
+    } else if (Info.$userMenu.find('a[href^="guanjianci.php?gjc="]:contains("有人@我")').length > 0) {
+        $msgTips.attr('id', 'pdNewReplyTips');
+    } else if (Info.$userMenu.find('a[href="kf_fw_1wkfb.php?ping=3"]:contains("有新评分")').length > 0) {
+        $msgTips.attr('id', 'pdNewRateTips').css({'color': '#5cb85c'});
+    }
 };
 
-    /**
-     * 添加慢速操作复选框
-     * @param {jQuery} $area 待添加区域
-     */
+/**
+ * 添加慢速操作复选框
+ * @param {jQuery} $area 待添加区域
+ */
 export const addSlowActionChecked = function ($area) {
-$(`
-
-
+    $(`
 <label style="margin-right: 5px;">
-  <input name="slowActionEnabled" type="checkbox" $
-{
-    Config.slowActionEnabled ? 'checked' : ''
-}
-> 慢速操作
+  <input name="slowActionEnabled" type="checkbox" ${Config.slowActionEnabled ? 'checked' : ''}> 慢速操作
   <span class="pd_cfg_tips" title="延长部分批量操作的时间间隔（在3~7秒之间），如使用道具、打开盒子等">[?]</span>
 </label>
-
 `).prependTo($area).find('input[name="slowActionEnabled"]').click(function () {
-let checked = $(this).prop('checked');
-$('input[name="slowActionEnabled"]').not(this).prop('checked', checked);
-if (Config.slowActionEnabled !== checked) {
-readConfig();
-Config.slowActionEnabled = checked;
-writeConfig();
-}
-});
+        let checked = $(this).prop('checked');
+        $('input[name="slowActionEnabled"]').not(this).prop('checked', checked);
+        if (Config.slowActionEnabled !== checked) {
+            readConfig();
+            Config.slowActionEnabled = checked;
+            writeConfig();
+        }
+    });
+};
+
+/**
+ * 修改域名更换提示区域
+ */
+export const modifyDomainTips = function () {
+    $('#alldiv > .drow:first-child').has('div:contains("主域名更换")')
+        .insertBefore('#alldiv > .drow:last-child').addClass('pd_domain_tips')
+        .parent().find('> .drow:first-child').css('margin-top', '40px');
 };
