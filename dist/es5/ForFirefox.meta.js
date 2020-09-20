@@ -11,10 +11,11 @@
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
 // @include     https://*fygal.com/*
 // @include     https://*bakabbs.com/*
-// @include     https://*ikfol.com/*
-// @include     https://*9moe.com/*
+// @include     https://*365gal.com/*
+// @include     https://*365galgame.com/*
 // @include     https://*kfgal.com/*
-// @version     14.1.4
+// @include     https://*ikfol.com/*
+// @version     14.1.5
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
