@@ -8,13 +8,13 @@
 // @updateURL   https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.meta.js
 // @downloadURL https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/es6/ForFirefox.user.js
 // @require     https://gitee.com/miaolapd/KF_Online_Assistant/raw/master/dist/lib/jquery.min.js?V2.2.4
-// @include     https://*fygal.com/*
+// @include     https://*kforz.com/*
 // @include     https://*bakabbs.com/*
 // @include     https://*365gal.com/*
 // @include     https://*365galgame.com/*
+// @include     https://*fygal.com/*
 // @include     https://*kfgal.com/*
-// @include     https://*ikfol.com/*
-// @version     14.1.5
+// @version     14.1.6
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
@@ -103,7 +103,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // 版本号
-const version = '14.1.5';
+const version = '14.1.6';
 
 /**
  * 导出模块
@@ -8227,7 +8227,7 @@ const replaceSiteLink = exports.replaceSiteLink = function () {
     $('form[name="FORM"]').submit(function () {
         let $textArea = $(this).find('textarea[name="atc_content"]');
         if (!$textArea.length) return;
-        $textArea.val($textArea.val().replace(new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'), 'https://bbs.fygal.com/$1.php'));
+        $textArea.val($textArea.val().replace(new RegExp(`${location.protocol}//${location.hostname.replace(/\./g, '\\.')}/(\\w+)\\.php`, 'g'), 'https://bbs.kforz.com/$1.php'));
     });
 };
 
@@ -10235,7 +10235,7 @@ const modifyKFOtherDomainLink = exports.modifyKFOtherDomainLink = function () {
         let $this = $(this);
         let url = $this.attr('href');
         if (/m\.miaola\.info\//i.test(url)) return;
-        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|ikfol|kfacg|fygal|bakabbs|365gal|365galgame|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
+        let matches = /^(https?:\/\/(?:[\w\.]+?\.)?(?:2dgal|ddgal|9gal|9baka|9moe|kfgal|2dkf|ikfol|kfacg|fygal|bakabbs|365gal|365galgame|kforz|miaola|koyuki)\.\w+?\/)\w+\.php/i.exec(url);
         if (matches) $this.attr('href', url.replace(matches[1], Util.getHostNameUrl()));
     });
 };
