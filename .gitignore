@@ -1,4 +1,5 @@
 .idea/
+node/
 node_modules/
 wiki/
 vps/
@@ -9,3 +10,4 @@ build.bat
 buildCustomScripts.bat
 myGulpFile.js
 package-lock.json
+gulp.cmd
